@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#ffffff">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Geo Snap HD</title>
+<style>
+:root{--ink:#555;--line:#e8e8e8;--soft:#fafafa}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:#fff;color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;text-align:center}
+button{font-family:inherit}
+.ib{width:42px;height:42px;border-radius:50%;border:1px solid var(--line);background:var(--soft);color:var(--ink);padding:0;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;cursor:pointer;flex:none}
+.ib:active{background:#eee}
+.ib svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.ib svg.f{fill:currentColor;stroke:none}
+.ib.rec{background:#ffe3e3;color:#d33;border-color:#f3b8b8}
+#vid .rt{display:none;align-items:center;gap:6px;font-size:14px;font-weight:600;color:#d33}
+#vid .rt i{width:10px;height:10px;border-radius:50%;background:#e33;display:inline-block}
+#vid.rec{width:auto;min-width:86px;padding:0 14px;border-radius:21px}
+#vid.rec svg{display:none}
+#vid.rec .rt{display:inline-flex}
+#vid.rec .rt i{animation:bl 1s infinite}
+@keyframes bl{50%{opacity:.25}}
+@media (prefers-reduced-motion:reduce){#vid.rec .rt i{animation:none}}
+.top{display:flex;justify-content:space-between;align-items:center;padding:8px;gap:6px}
+.grp{display:flex;align-items:center;gap:6px}
+#shot{font-size:12px;min-width:66px;color:#888;white-space:nowrap;text-align:left}
+#panel{display:none;background:var(--soft);border:1px solid #eee;margin:4px 8px;padding:10px;border-radius:14px}
+#panel b{font-size:13px}
+input[type=text],select{font-size:15px;padding:9px;margin:4px;border:1px solid #e3e3e3;border-radius:10px;width:80%;background:#fff;color:var(--ink)}
+#panel label{font-size:13px;display:block;margin-top:6px}
+#coffee{border:1px solid #e3e3e3;border-radius:20px;background:#fff;padding:9px 16px;font-size:15px;color:var(--ink);margin-top:8px}
+#wrap{position:relative;overflow:hidden;width:100%;aspect-ratio:3/4;background:#f4f4f4}
+#wrap.full{aspect-ratio:auto;height:calc(100vh - 215px);height:calc(100dvh - 215px)}
+#cam{position:absolute;left:0;top:0;width:100%;height:100%;object-fit:cover;transform-origin:center}
+#gridbox{display:none;position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;background:linear-gradient(rgba(255,255,255,.9),rgba(255,255,255,.9)) center/100% 1.5px no-repeat,linear-gradient(rgba(255,255,255,.9),rgba(255,255,255,.9)) center/1.5px 100% no-repeat}
+#ov{position:absolute;pointer-events:none;transform-origin:center;left:0;top:0;width:100%;height:100%}
+#stamp{position:absolute;left:10px;right:10px;bottom:10px;text-align:left;font-size:13px;line-height:1.35;white-space:pre-line;color:#fff}
+#zrow{display:flex;align-items:center;gap:10px;padding:8px 18px}
+#zl{font-size:13px;min-width:38px;color:#888}
+#zoom{flex:1;accent-color:#888}
+.bot{display:flex;align-items:center;justify-content:space-between;padding:6px 18px 10px}
+.mid{display:flex;align-items:center;gap:12px}
+#snap{width:66px;height:66px}
+#snap svg{width:34px;height:34px}
+#thumb{width:46px;height:46px;border-radius:12px;border:1px solid var(--line);background:#f4f4f4 center/cover no-repeat;display:flex;align-items:center;justify-content:center;color:#888;font-size:18px;cursor:pointer}
+#msg{min-height:18px;margin:4px 0;font-size:13px;color:#888}
+#ad{margin:8px 10px;padding:14px;border:1px dashed #ddd;color:#aaa;font-size:13px}
+#gal{display:none;position:fixed;left:0;top:0;right:0;bottom:0;background:#fff;z-index:20;flex-direction:column}
+#gbody{flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;background:#f4f4f4}
+#gbody img,#gbody video{max-width:100%;max-height:100%}
+#gcount{font-size:14px;color:#888}
+</style>
+</head>
+<body>
+
+<div class="top">
+  <div class="grp">
+    <button class="ib" id="flash" aria-label="Light"><svg viewBox="0 0 24 24"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg></button>
+    <button class="ib" id="gps" aria-label="Location"><svg viewBox="0 0 24 24"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg></button>
+    <button class="ib" id="ratio" aria-label="Frame size">4:3</button>
+    <span id="shot"></span>
+  </div>
+  <div class="grp">
+    <button class="ib" id="grid" aria-label="Grid"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M12 4v16M4 12h16"/></svg></button>
+    <button class="ib" id="menu" aria-label="Menu"><svg class="f" viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg></button>
+  </div>
+</div>
+
+<div id="panel">
+  <b>Custom tags</b><br>
+  <input type="text" id="tag1" placeholder="Tag 1">
+  <input type="text" id="tag2" placeholder="Tag 2">
+  <input type="text" id="tag3" placeholder="Tag 3"><br>
+  <b>Resolution</b><br>
+  <select id="res"><option>HD 1080</option><option>2444</option><option>4K</option><option selected>Max</option></select><br>
+  <b>Photo quality</b><br>
+  <select id="pq"><option value="0.8" selected>Standard</option><option value="0.93">High</option><option value="0.65">Small file</option></select><br>
+  <b>Video format</b><br>
+  <select id="vf"><option value="webm" selected>WebM (safest)</option><option value="mp4">MP4</option></select><br>
+  <b>Text colour</b><br>
+  <select id="tcol"><option value="#ffffff">White</option><option value="#000000">Black</option><option value="#ffd400">Yellow</option></select>
+  <label><input type="checkbox" id="rev"> Reverse text direction in landscape</label>
+  <button id="coffee">Buy me a coffee</button>
+</div>
+
+<div id="wrap">
+  <video id="cam" autoplay playsinline muted></video>
+  <div id="gridbox"></div>
+  <div id="ov"><div id="stamp"></div></div>
+</div>
+
+<div id="zrow"><span id="zl">1.0x</span><input id="zoom" type="range" min="1" max="4" step="0.1" value="1" aria-label="Zoom"></div>
+
+<div class="bot">
+  <div id="thumb" aria-label="Open gallery"></div>
+  <div class="mid">
+    <button class="ib" id="snap" aria-label="Take photo"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5.5" fill="currentColor"/></svg></button>
+    <button class="ib" id="vid" aria-label="Record video"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="13" height="12" rx="3"/><path d="M16 10l5-3v10l-5-3z"/></svg><span class="rt"><i></i><span id="vt">00:00</span></span></button>
+  </div>
+  <button class="ib" id="flip" aria-label="Switch camera"><svg viewBox="0 0 24 24"><path d="M4 8h13l-3-3M20 16H7l3 3"/></svg></button>
+</div>
+
+<div id="msg"></div>
+<canvas id="canvas" hidden></canvas>
+<div id="ad">Ad space</div>
+
+<div id="gal">
+  <div class="top">
+    <button class="ib" id="gclose" aria-label="Close"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    <span id="gcount"></span>
+    <span style="width:42px"></span>
+  </div>
+  <div id="gbody"></div>
+  <div class="top">
+    <button class="ib" id="gprev" aria-label="Older"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>
+    <button class="ib" id="gnext" aria-label="Newer"><svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></button>
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+var $=function(i){return document.getElementById(i);};
+var cam=$("cam"),wrap=$("wrap"),msg=$("msg"),ov=$("ov"),stampEl=$("stamp"),shotEl=$("shot"),zs=$("zoom"),zl=$("zl"),vidBtn=$("vid"),thumb=$("thumb"),cv=$("canvas"),revEl=$("rev");
+var facing="environment",stream=null,flashMode=0,busy=false,hz=false,dz=1,angle=0,placeText="",gpsOn=false,gpsTimer=null,cur=[],coffeeUrl="";
+var RT=[["4:3","3/4"],["16:9","9/16"],["1:1","1/1"],["Full",""]],ri=0;
+var db=null,items=[],tu=null,gi=0,gu=null,mt=null,mx="";
+var recOn=false,rec=null,recChunks=[],recTimer=null,recStart=0,recRaf=0,recCv=null,recRot=0,recW=0,recH=0,recAudio=null;
+
+/* ---------- small helpers ---------- */
+function say(s,bad){
+  msg.style.color=bad?"#c33":"#888";
+  msg.textContent=s;
+  clearTimeout(mt);
+  mt=setTimeout(function(){msg.textContent="";},4500);
+}
+function keep(){
+  try{
+    localStorage.setItem("gs",JSON.stringify({a:$("tag1").value,b:$("tag2").value,c:$("tag3").value,r:$("res").value,k:$("tcol").value,i:ri,v:revEl.checked,q:$("pq").value,f:$("vf").value}));
+  }catch(e){}
+}
+function load(){
+  try{
+    var o=JSON.parse(localStorage.getItem("gs")||"{}");
+    if(o.a){$("tag1").value=o.a;}
+    if(o.b){$("tag2").value=o.b;}
+    if(o.c){$("tag3").value=o.c;}
+    if(o.r){$("res").value=o.r;}
+    if(o.k){$("tcol").value=o.k;}
+    if(o.q){$("pq").value=o.q;}
+    if(o.f){$("vf").value=o.f;}
+    if(typeof o.i==="number"){ri=o.i%RT.length;}
+    revEl.checked=!!o.v;
+  }catch(e){}
+}
+function col(){stampEl.style.color=$("tcol").value;}
+
+/* ---------- stamp text ---------- */
+function lines(){
+  var d=new Date(),t=[d.toLocaleDateString()+"  "+d.toLocaleTimeString()];
+  if(placeText){t.push(placeText);}
+  var tg=[$("tag1").value,$("tag2").value,$("tag3").value].filter(function(x){return x;}).join(" | ");
+  if(tg){t.push(tg);}
+  return t;
+}
+function tick(){
+  cur=lines();
+  var s=cur.join("\n");
+  if(stampEl.textContent!==s){stampEl.textContent=s;}
+}
+
+/* ---------- frame size and stamp rotation ---------- */
+function place(){
+  var W=wrap.clientWidth,H=wrap.clientHeight,r=(360-angle)%360;
+  if(r%180){
+    ov.style.width=H+"px";ov.style.height=W+"px";
+    ov.style.left=((W-H)/2)+"px";ov.style.top=((H-W)/2)+"px";
+  }else{
+    ov.style.width=W+"px";ov.style.height=H+"px";
+    ov.style.left="0px";ov.style.top="0px";
+  }
+  ov.style.transform="rotate("+r+"deg)";
+}
+function setRatio(){
+  var r=RT[ri];
+  $("ratio").textContent=r[0];
+  if(r[1]){wrap.classList.remove("full");wrap.style.aspectRatio=r[1];}
+  else{wrap.classList.add("full");wrap.style.aspectRatio="";}
+  place();
+}
+window.addEventListener("devicemotion",function(e){
+  var g=e.accelerationIncludingGravity;
+  if(!g||g.x==null||g.y==null){return;}
+  var ax=g.x,ay=g.y,n=angle;
+  if(Math.max(Math.abs(ax),Math.abs(ay))<4){return;}
+  if(Math.abs(Math.abs(ax)-Math.abs(ay))<2.5){return;}
+  if(Math.abs(ay)>Math.abs(ax)){n=ay>0?0:180;}
+  else{
+    n=ax>0?270:90;
+    if(revEl.checked){n=(n===270)?90:270;}
+  }
+  if(n!==angle){angle=n;place();}
+});
+window.addEventListener("resize",place);
+
+/* ---------- drawing the final picture ---------- */
+function cropRect(sw,sh){
+  var r=wrap.clientWidth/wrap.clientHeight,cw=sw,ch=sw/r;
+  if(ch>sh){ch=sh;cw=sh*r;}
+  cw=cw/dz;ch=ch/dz;
+  return [(sw-cw)/2,(sh-ch)/2,cw,ch];
+}
+function stampOn(x,ow,oh){
+  var L=cur,fs=Math.round(Math.min(ow,oh)/26),lh=fs*1.35;
+  x.font=fs+"px sans-serif";
+  x.fillStyle=$("tcol").value;
+  x.textBaseline="alphabetic";
+  var y0=oh-fs*0.6-(L.length-1)*lh;
+  L.forEach(function(s,i){x.fillText(s,fs*0.5,y0+i*lh,ow-fs);});
+}
+function paintOut(c,src,sw,sh,rot,ow,oh){
+  var rc=cropRect(sw,sh),x=c.getContext("2d"),sq=(rot%180)!==0,dw=sq?oh:ow,dh=sq?ow:oh;
+  x.save();
+  x.translate(ow/2,oh/2);
+  x.rotate(rot*Math.PI/180);
+  x.drawImage(src,rc[0],rc[1],rc[2],rc[3],-dw/2,-dh/2,dw,dh);
+  x.restore();
+  stampOn(x,ow,oh);
+}
+
+/* ---------- camera ---------- */
+function flook(){
+  var b=$("flash");
+  b.style.background=flashMode===1?"#fff2b8":(flashMode===2?"#dcecff":"");
+}
+function torch(){
+  var t=stream&&stream.getVideoTracks()[0];
+  if(!t||!t.getCapabilities){return false;}
+  var c=t.getCapabilities();
+  if(!c.torch){return false;}
+  t.applyConstraints({advanced:[{torch:flashMode===1}]}).catch(function(){});
+  return true;
+}
+function setupZoom(){
+  var t=stream.getVideoTracks()[0],c=(t&&t.getCapabilities)?t.getCapabilities():{};
+  if(c.zoom){
+    hz=true;zs.min=c.zoom.min;zs.max=c.zoom.max;zs.step=c.zoom.step||0.1;zs.value=c.zoom.min;
+  }else{
+    hz=false;zs.min=1;zs.max=4;zs.step=0.1;zs.value=1;
+  }
+  applyZoom();
+}
+function applyZoom(){
+  var v=parseFloat(zs.value)||1;
+  zl.textContent=v.toFixed(1)+"x";
+  if(hz&&stream){
+    var t=stream.getVideoTracks()[0];
+    t.applyConstraints({advanced:[{zoom:v}]}).catch(function(){});
+    dz=1;cam.style.transform="";
+  }else{
+    dz=v;cam.style.transform="scale("+v+")";
+  }
+}
+function startCamera(){
+  if(stream){stream.getTracks().forEach(function(t){t.stop();});}
+  flashMode=0;flook();
+  navigator.mediaDevices.getUserMedia({video:{facingMode:facing,width:{ideal:1920},height:{ideal:1440}},audio:false}).then(function(s){
+    stream=s;cam.srcObject=s;msg.textContent="";setupZoom();
+  }).catch(function(e){
+    msg.style.color="#c33";msg.textContent=e.name+" "+e.message;
+  });
+}
+
+/* ---------- saving and gallery ---------- */
+function dl(b,ext){
+  var u=URL.createObjectURL(b),a=document.createElement("a");
+  a.href=u;a.download="geosnap_"+Date.now()+"."+ext;
+  document.body.appendChild(a);a.click();a.remove();
+  setTimeout(function(){URL.revokeObjectURL(u);},60000);
+}
+function setThumb(){
+  if(tu){URL.revokeObjectURL(tu);tu=null;}
+  var n=items.length;
+  if(!n){thumb.style.backgroundImage="";thumb.textContent="";return;}
+  var it=items[n-1].v;
+  if(it.t==="image"){
+    tu=URL.createObjectURL(it.b);
+    thumb.style.backgroundImage="url("+tu+")";thumb.textContent="";
+  }else{
+    thumb.style.backgroundImage="";thumb.textContent="\u25B6";
+  }
+}
+function openDB(){
+  try{
+    var rq=indexedDB.open("geosnap",1);
+    rq.onupgradeneeded=function(){rq.result.createObjectStore("m",{autoIncrement:true});};
+    rq.onsuccess=function(){
+      db=rq.result;
+      var cur2=db.transaction("m","readonly").objectStore("m").openCursor();
+      cur2.onsuccess=function(){
+        var c=cur2.result;
+        if(c){items.push({k:c.key,v:c.value});c.continue();}
+        else{setThumb();}
+      };
+    };
+    rq.onerror=function(){db=null;};
+  }catch(e){db=null;}
+}
+function addItem(blob,type){
+  var rc={t:type,b:blob,d:Date.now()},it={k:null,v:rc};
+  items.push(it);setThumb();
+  if(!db){return;}
+  try{
+    var rq=db.transaction("m","readwrite").objectStore("m").add(rc);
+    rq.onsuccess=function(){
+      it.k=rq.result;
+      while(items.length>40){
+        var o=items.shift();
+        if(o.k!=null){db.transaction("m","readwrite").objectStore("m").delete(o.k);}
+      }
+    };
+  }catch(e){}
+}
+function showG(){
+  var it=items[gi].v,b=$("gbody");
+  if(gu){URL.revokeObjectURL(gu);}
+  gu=URL.createObjectURL(it.b);
+  b.innerHTML="";
+  var el=document.createElement(it.t==="video"?"video":"img");
+  el.src=gu;
+  if(it.t==="video"){
+    el.controls=true;el.playsInline=true;el.preload="auto";
+    el.onloadedmetadata=function(){
+      var go=function(){var p=el.play();if(p&&p.catch){p.catch(function(){});}};
+      if(el.duration===Infinity){
+        el.currentTime=1e101;
+        el.ontimeupdate=function(){el.ontimeupdate=null;el.currentTime=0;go();};
+      }else{go();}
+    };
+  }
+  b.appendChild(el);
+  $("gcount").textContent=(gi+1)+" / "+items.length;
+}
+function closeG(){
+  $("gal").style.display="none";
+  $("gbody").innerHTML="";
+  if(gu){URL.revokeObjectURL(gu);gu=null;}
+}
+
+/* ---------- photo ---------- */
+function bigFor(){
+  var v=$("res").value;
+  return v==="Max"?1e9:(v==="4K"?3840:(v==="2444"?2444:1920));
+}
+function snap(){
+  if(busy||!stream||recOn){return;}
+  busy=true;tick();
+  var big=bigFor(),t=stream.getVideoTracks()[0];
+  function done(src,w,h,info){
+    var rc=cropRect(w,h),sc=Math.min(1,big/Math.max(rc[2],rc[3])),cw=Math.round(rc[2]*sc),ch=Math.round(rc[3]*sc);
+    var sq=(angle%180)!==0,ow=sq?ch:cw,oh=sq?cw:ch;
+    cv.width=ow;cv.height=oh;
+    paintOut(cv,src,w,h,angle,ow,oh);
+    cv.toBlob(function(b){
+      if(!b){busy=false;say("Photo not saved",true);return;}
+      dl(b,"jpg");addItem(b,"image");
+      shotEl.style.color="";shotEl.textContent="Shot "+new Date().toLocaleTimeString();
+      setTimeout(function(){if(!recOn){shotEl.textContent="";}},4000);
+      say(ow+"x"+oh+"  "+(b.size/1048576).toFixed(1)+" MB"+(info||""));
+      busy=false;
+    },"image/jpeg",parseFloat($("pq").value)||0.8);
+  }
+  function fb(){done(cam,cam.videoWidth,cam.videoHeight,"  (basic mode)");}
+  if(!window.ImageCapture){try{fb();}catch(e){busy=false;}return;}
+  var ic=new ImageCapture(t);
+  ic.getPhotoCapabilities().then(function(cp){
+    var o={};
+    if(flashMode===2&&cp.fillLightMode&&cp.fillLightMode.indexOf("auto")>=0){o.fillLightMode="auto";}
+    if(cp.imageWidth&&cp.imageHeight){
+      var mw=cp.imageWidth.max,mh=cp.imageHeight.max,s=Math.min(1,big/Math.max(mw,mh));
+      var sw2=cp.imageWidth.step||1,sh2=cp.imageHeight.step||1;
+      o.imageWidth=Math.min(mw,Math.max(cp.imageWidth.min,Math.round(mw*s/sw2)*sw2));
+      o.imageHeight=Math.min(mh,Math.max(cp.imageHeight.min,Math.round(mh*s/sh2)*sh2));
+      mx=mw+"x"+mh;
+    }
+    return ic.takePhoto(o);
+  }).then(function(b){
+    return createImageBitmap(b,{imageOrientation:"from-image"});
+  }).then(function(bm){
+    done(bm,bm.width,bm.height,mx?"  (camera max "+mx+")":"");
+    if(bm.close){bm.close();}
+  }).catch(function(){
+    try{fb();}catch(e){busy=false;say("Photo failed",true);}
+  });
+}
+
+/* ---------- video ---------- */
+function pickMime(){
+  var W=["video/webm;codecs=vp8,opus","video/webm;codecs=vp9,opus","video/webm"];
+  var M=["video/mp4;codecs=avc1,mp4a.40.2","video/mp4"];
+  var L=($("vf").value==="mp4")?M.concat(W):W.concat(M);
+  for(var i=0;i<L.length;i++){if(MediaRecorder.isTypeSupported(L[i])){return L[i];}}
+  return "";
+}
+function tickRec(){
+  var s=Math.floor((Date.now()-recStart)/1000),m=Math.floor(s/60),r=s%60;
+  var tt=(m<10?"0":"")+m+":"+(r<10?"0":"")+r;
+  $("vt").textContent=tt;
+  shotEl.style.color="#d33";
+  shotEl.textContent="REC "+tt;
+}
+function loop(){
+  if(!recOn){return;}
+  paintOut(recCv,cam,cam.videoWidth,cam.videoHeight,recRot,recW,recH);
+  recRaf=requestAnimationFrame(loop);
+}
+function finishRec(blob,type){
+  cancelAnimationFrame(recRaf);clearInterval(recTimer);
+  if(recAudio){recAudio.getTracks().forEach(function(t){t.stop();});recAudio=null;}
+  var secs=Math.round((Date.now()-recStart)/1000),ext=type.indexOf("mp4")>=0?"mp4":"webm";
+  if(recCv&&recCv.parentNode){recCv.parentNode.removeChild(recCv);}
+  recOn=false;rec=null;recCv=null;
+  vidBtn.classList.remove("rec");
+  $("vt").textContent="00:00";
+  shotEl.style.color="";shotEl.textContent="";
+  if(!blob.size){say("Video is empty",true);return;}
+  dl(blob,ext);
+  addItem(blob,"video");
+  say("Video saved  "+secs+" s  "+(blob.size/1048576).toFixed(1)+" MB  "+ext);
+}
+function begin(cs,a){
+  recAudio=a;recChunks=[];
+  var m=pickMime(),o={videoBitsPerSecond:6000000};
+  if(m){o.mimeType=m;}
+  try{rec=new MediaRecorder(cs,o);}
+  catch(e){say("Record error "+e.name,true);recOn=false;rec=null;if(a){a.getTracks().forEach(function(t){t.stop();});}return;}
+  rec.ondataavailable=function(e){if(e.data&&e.data.size){recChunks.push(e.data);}};
+  rec.onstop=function(){
+    var type=(rec&&rec.mimeType)||m||"video/webm";
+    finishRec(new Blob(recChunks,{type:type}),type);
+  };
+  rec.start(1000);
+  recStart=Date.now();
+  vidBtn.classList.add("rec");
+  tick();loop();
+  recTimer=setInterval(tickRec,500);tickRec();
+}
+function startRec(){
+  if(recOn||!stream){return;}
+  if(!window.MediaRecorder){say("This browser cannot record video",true);return;}
+  var sw=cam.videoWidth,sh=cam.videoHeight;
+  if(!sw){return;}
+  recOn=true;recRot=angle;
+  var rc=cropRect(sw,sh),sc=Math.min(1,1920/Math.max(rc[2],rc[3]));
+  var w2=Math.round(rc[2]*sc)&~1,h2=Math.round(rc[3]*sc)&~1;
+  recW=(recRot%180)?h2:w2;recH=(recRot%180)?w2:h2;
+  recCv=document.createElement("canvas");recCv.width=recW;recCv.height=recH;
+  recCv.style.cssText="position:fixed;left:0;top:0;width:2px;height:2px;opacity:0.01;pointer-events:none";
+  document.body.appendChild(recCv);
+  if(!recCv.captureStream){say("Video recording not supported here",true);recOn=false;if(recCv.parentNode){recCv.parentNode.removeChild(recCv);}return;}
+  var cs=recCv.captureStream(30);
+  navigator.mediaDevices.getUserMedia({audio:true}).then(function(a){
+    a.getAudioTracks().forEach(function(t){cs.addTrack(t);});
+    begin(cs,a);
+  }).catch(function(){begin(cs,null);});
+}
+function stopRec(){
+  if(rec&&rec.state!=="inactive"){try{rec.stop();}catch(e){}}
+}
+
+/* ---------- location ---------- */
+function findPlace(){
+  navigator.geolocation.getCurrentPosition(function(p){
+    fetch("https://nominatim.openstreetmap.org/reverse?format=json&lat="+p.coords.latitude+"&lon="+p.coords.longitude)
+      .then(function(r){return r.json();})
+      .then(function(j){placeText=j.display_name.split(", ").slice(0,4).join(", ");})
+      .catch(function(){placeText="Place not found";});
+  },function(e){placeText="GPS error "+e.code;});
+}
+
+/* ---------- buttons ---------- */
+$("flash").onclick=function(){
+  flashMode=(flashMode+1)%3;flook();
+  var ok=torch();
+  say(["Light off","Light on","Light auto"][flashMode]+((flashMode===1&&!ok)?" (this camera has no torch)":""));
+};
+$("gps").onclick=function(){
+  gpsOn=!gpsOn;
+  if(gpsOn){placeText="Finding place...";findPlace();gpsTimer=setInterval(findPlace,30000);}
+  else{clearInterval(gpsTimer);placeText="";}
+  this.style.background=gpsOn?"#d9f2d9":"";
+  tick();
+};
+$("ratio").onclick=function(){ri=(ri+1)%RT.length;setRatio();keep();};
+$("grid").onclick=function(){var g=$("gridbox");g.style.display=(g.style.display==="block")?"none":"block";};
+$("menu").onclick=function(){var p=$("panel");p.style.display=(p.style.display==="block")?"none":"block";setTimeout(place,50);};
+$("flip").onclick=function(){if(recOn){return;}facing=(facing==="environment")?"user":"environment";startCamera();};
+$("snap").onclick=snap;
+vidBtn.onclick=function(){if(recOn){stopRec();}else{startRec();}};
+zs.oninput=applyZoom;
+thumb.onclick=function(){
+  if(!items.length){say("No photos yet");return;}
+  gi=items.length-1;$("gal").style.display="flex";showG();
+};
+$("gclose").onclick=closeG;
+$("gprev").onclick=function(){if(gi>0){gi--;showG();}};
+$("gnext").onclick=function(){if(gi<items.length-1){gi++;showG();}};
+$("coffee").onclick=function(){if(coffeeUrl){window.open(coffeeUrl,"_blank");}else{say("Tip link will be added soon");}};
+["tag1","tag2","tag3"].forEach(function(i){$(i).oninput=function(){tick();keep();};});
+$("res").onchange=keep;
+$("pq").onchange=keep;
+$("vf").onchange=keep;
+$("tcol").onchange=function(){col();keep();};
+revEl.onchange=keep;
+document.addEventListener("visibilitychange",function(){
+  if(!document.hidden&&!recOn&&!busy){startCamera();}
+});
+
+/* ---------- start ---------- */
+load();col();setRatio();tick();
+setInterval(tick,1000);
+openDB();startCamera();
+})();
+</script>
+<script>
+if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){});});}
+</script>
+</body>
+</html>
