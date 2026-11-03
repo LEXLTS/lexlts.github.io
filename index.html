@@ -35,6 +35,8 @@ button{font-family:inherit}
 #panel b{font-size:13px}
 input[type=text],select{font-size:15px;padding:9px;margin:4px;border:1px solid #e3e3e3;border-radius:10px;width:80%;background:#fff;color:var(--ink)}
 #panel label{font-size:13px;display:block;margin-top:6px}
+#panel input[type=range]{width:70%;accent-color:#888}
+#brl{font-size:13px;color:#888}
 #coffee{border:1px solid #e3e3e3;border-radius:20px;background:#fff;padding:9px 16px;font-size:15px;color:var(--ink);margin-top:8px}
 #wrap{position:relative;overflow:hidden;width:100%;aspect-ratio:3/4;background:#f4f4f4}
 #wrap.full{aspect-ratio:auto;height:calc(100vh - 215px);height:calc(100dvh - 215px)}
@@ -80,6 +82,8 @@ input[type=text],select{font-size:15px;padding:9px;margin:4px;border:1px solid #
   <input type="text" id="tag3" placeholder="Tag 3"><br>
   <b>Resolution</b><br>
   <select id="res"><option>HD 1080</option><option>2444</option><option>4K</option><option selected>Max</option></select><br>
+  <b>Brightness</b> <span id="brl"></span><br>
+  <input type="range" id="br" min="-2" max="2" step="0.1" value="0"><br>
   <b>Photo quality</b><br>
   <select id="pq"><option value="0.8" selected>Standard</option><option value="0.93">High</option><option value="0.65">Small file</option></select><br>
   <b>Video format</b><br>
@@ -132,6 +136,7 @@ var cam=$("cam"),wrap=$("wrap"),msg=$("msg"),ov=$("ov"),stampEl=$("stamp"),shotE
 var facing="environment",stream=null,flashMode=0,busy=false,hz=false,dz=1,angle=0,placeText="",gpsOn=false,gpsTimer=null,cur=[],coffeeUrl="";
 var RT=[["4:3","3/4"],["16:9","9/16"],["1:1","1/1"],["Full",""]],ri=0;
 var db=null,items=[],tu=null,gi=0,gu=null,mt=null,mx="";
+var cons={},hb=false,sb=1,bhv=null,bsv=null,phys=0;
 var recOn=false,rec=null,recChunks=[],recTimer=null,recStart=0,recRaf=0,recCv=null,recRot=0,recW=0,recH=0,recAudio=null;
 
 /* ---------- small helpers ---------- */
@@ -143,7 +148,7 @@ function say(s,bad){
 }
 function keep(){
   try{
-    localStorage.setItem("gs",JSON.stringify({a:$("tag1").value,b:$("tag2").value,c:$("tag3").value,r:$("res").value,k:$("tcol").value,i:ri,v:revEl.checked,q:$("pq").value,f:$("vf").value}));
+    localStorage.setItem("gs",JSON.stringify({a:$("tag1").value,b:$("tag2").value,c:$("tag3").value,r:$("res").value,k:$("tcol").value,i:ri,v:revEl.checked,q:$("pq").value,f:$("vf").value,bh:bhv,bs:bsv}));
   }catch(e){}
 }
 function load(){
@@ -156,6 +161,8 @@ function load(){
     if(o.k){$("tcol").value=o.k;}
     if(o.q){$("pq").value=o.q;}
     if(o.f){$("vf").value=o.f;}
+    if(typeof o.bh==="number"){bhv=o.bh;}
+    if(typeof o.bs==="number"){bsv=o.bs;}
     if(typeof o.i==="number"){ri=o.i%RT.length;}
     revEl.checked=!!o.v;
   }catch(e){}
@@ -188,27 +195,46 @@ function place(){
   }
   ov.style.transform="rotate("+r+"deg)";
 }
+function fit(){
+  var land=window.innerWidth>window.innerHeight,r=RT[ri];
+  if(land&&r[1]){
+    var p=r[1].split("/"),q=parseFloat(p[1])/parseFloat(p[0]),h=Math.max(160,window.innerHeight-130);
+    wrap.style.aspectRatio="auto";wrap.style.height=h+"px";
+    wrap.style.width=Math.min(window.innerWidth,Math.round(h*q))+"px";wrap.style.margin="0 auto";
+  }else{
+    wrap.style.height="";wrap.style.width="";wrap.style.margin="";wrap.style.aspectRatio=r[1]||"";
+  }
+}
 function setRatio(){
   var r=RT[ri];
   $("ratio").textContent=r[0];
-  if(r[1]){wrap.classList.remove("full");wrap.style.aspectRatio=r[1];}
-  else{wrap.classList.add("full");wrap.style.aspectRatio="";}
-  place();
+  if(r[1]){wrap.classList.remove("full");}else{wrap.classList.add("full");}
+  fit();place();
+}
+function scrAngle(){
+  var a=0;
+  if(screen.orientation&&typeof screen.orientation.angle==="number"){a=screen.orientation.angle;}
+  else if(typeof window.orientation==="number"){a=(window.orientation+360)%360;}
+  return a;
+}
+function upd(){
+  var rel=(phys-scrAngle()+720)%360,n=(360-rel)%360;
+  if(revEl.checked&&(n===90||n===270)){n=(n===90)?270:90;}
+  if(n!==angle){angle=n;place();}
 }
 window.addEventListener("devicemotion",function(e){
   var g=e.accelerationIncludingGravity;
   if(!g||g.x==null||g.y==null){return;}
-  var ax=g.x,ay=g.y,n=angle;
+  var ax=g.x,ay=g.y,p=phys;
   if(Math.max(Math.abs(ax),Math.abs(ay))<4){return;}
   if(Math.abs(Math.abs(ax)-Math.abs(ay))<2.5){return;}
-  if(Math.abs(ay)>Math.abs(ax)){n=ay>0?0:180;}
-  else{
-    n=ax>0?270:90;
-    if(revEl.checked){n=(n===270)?90:270;}
-  }
-  if(n!==angle){angle=n;place();}
+  if(Math.abs(ay)>Math.abs(ax)){p=ay>0?0:180;}else{p=ax>0?90:270;}
+  if(p!==phys){phys=p;upd();}
 });
-window.addEventListener("resize",place);
+window.addEventListener("resize",function(){fit();place();});
+if(screen.orientation&&screen.orientation.addEventListener){
+  screen.orientation.addEventListener("change",function(){setTimeout(function(){fit();upd();place();},150);});
+}
 
 /* ---------- drawing the final picture ---------- */
 function cropRect(sw,sh){
@@ -230,6 +256,7 @@ function paintOut(c,src,sw,sh,rot,ow,oh){
   x.save();
   x.translate(ow/2,oh/2);
   x.rotate(rot*Math.PI/180);
+  if(sb!==1){x.filter="brightness("+sb+")";}
   x.drawImage(src,rc[0],rc[1],rc[2],rc[3],-dw/2,-dh/2,dw,dh);
   x.restore();
   stampOn(x,ow,oh);
@@ -240,13 +267,49 @@ function flook(){
   var b=$("flash");
   b.style.background=flashMode===1?"#fff2b8":(flashMode===2?"#dcecff":"");
 }
+function applyAll(){
+  var t=stream&&stream.getVideoTracks()[0];
+  if(!t||!t.applyConstraints){return;}
+  var adv=Object.keys(cons).map(function(k){var o={};o[k]=cons[k];return o;});
+  if(adv.length){t.applyConstraints({advanced:adv}).catch(function(){});}
+}
 function torch(){
   var t=stream&&stream.getVideoTracks()[0];
   if(!t||!t.getCapabilities){return false;}
   var c=t.getCapabilities();
   if(!c.torch){return false;}
-  t.applyConstraints({advanced:[{torch:flashMode===1}]}).catch(function(){});
+  cons.torch=(flashMode===1);applyAll();
   return true;
+}
+function tune(){
+  var t=stream.getVideoTracks()[0],c=(t&&t.getCapabilities)?t.getCapabilities():{};
+  ["exposureMode","whiteBalanceMode","focusMode"].forEach(function(k){
+    if(c[k]&&c[k].indexOf&&c[k].indexOf("continuous")>=0){cons[k]="continuous";}
+  });
+  applyAll();
+}
+function applyBright(){
+  var b=$("br"),v=parseFloat(b.value);
+  if(isNaN(v)){return;}
+  if(hb){
+    bhv=v;cons.exposureCompensation=v;applyAll();sb=1;cam.style.filter="";
+    $("brl").textContent=(v>0?"+":"")+v.toFixed(1)+" EV";
+  }else{
+    bsv=v;sb=v;cam.style.filter="brightness("+v+")";
+    $("brl").textContent=Math.round(v*100)+"%";
+  }
+}
+function setupBright(){
+  var t=stream.getVideoTracks()[0],c=(t&&t.getCapabilities)?t.getCapabilities():{},b=$("br"),e=c.exposureCompensation,v;
+  if(e&&typeof e.max==="number"){
+    hb=true;b.min=e.min;b.max=e.max;b.step=e.step||0.1;
+    v=(bhv!==null)?bhv:0.7;
+    v=Math.min(e.max,Math.max(e.min,v));
+  }else{
+    hb=false;b.min=0.8;b.max=1.8;b.step=0.05;
+    v=(bsv!==null)?bsv:1.2;
+  }
+  b.value=v;applyBright();
 }
 function setupZoom(){
   var t=stream.getVideoTracks()[0],c=(t&&t.getCapabilities)?t.getCapabilities():{};
@@ -261,8 +324,7 @@ function applyZoom(){
   var v=parseFloat(zs.value)||1;
   zl.textContent=v.toFixed(1)+"x";
   if(hz&&stream){
-    var t=stream.getVideoTracks()[0];
-    t.applyConstraints({advanced:[{zoom:v}]}).catch(function(){});
+    cons.zoom=v;applyAll();
     dz=1;cam.style.transform="";
   }else{
     dz=v;cam.style.transform="scale("+v+")";
@@ -270,9 +332,9 @@ function applyZoom(){
 }
 function startCamera(){
   if(stream){stream.getTracks().forEach(function(t){t.stop();});}
-  flashMode=0;flook();
+  cons={};flashMode=0;flook();
   navigator.mediaDevices.getUserMedia({video:{facingMode:facing,width:{ideal:1920},height:{ideal:1440}},audio:false}).then(function(s){
-    stream=s;cam.srcObject=s;msg.textContent="";setupZoom();
+    stream=s;cam.srcObject=s;msg.textContent="";tune();setupZoom();setupBright();
   }).catch(function(e){
     msg.style.color="#c33";msg.textContent=e.name+" "+e.message;
   });
@@ -518,13 +580,14 @@ $("res").onchange=keep;
 $("pq").onchange=keep;
 $("vf").onchange=keep;
 $("tcol").onchange=function(){col();keep();};
-revEl.onchange=keep;
+revEl.onchange=function(){keep();upd();};
+$("br").oninput=function(){applyBright();keep();};
 document.addEventListener("visibilitychange",function(){
   if(!document.hidden&&!recOn&&!busy){startCamera();}
 });
 
 /* ---------- start ---------- */
-load();col();setRatio();tick();
+load();col();phys=scrAngle();setRatio();tick();
 setInterval(tick,1000);
 openDB();startCamera();
 })();
