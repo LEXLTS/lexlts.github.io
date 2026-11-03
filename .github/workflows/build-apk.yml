@@ -17,18 +17,24 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 18
-
       - name: Set up Java JDK
         uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
           java-version: '17'
 
-      - name: Install Dependencies & Capacitor
+      - name: Ensure package.json exists
         run: |
-          npm install
-          npm install @capacitor/core @capacitor/cli @capacitor/android
+          if [ ! -f package.json ]; then
+            echo '{"name": "geosnap", "version": "1.0.0", "private": true}' > package.json
+          fi
+
+      - name: Install Capacitor Dependencies
+        run: |
+          npm install --save @capacitor/core @capacitor/cli @capacitor/android
+
+      - name: Initialize Capacitor Config
+        run: |
           npx cap init GeoSnap com.geosnap.app --web-dir . --yes || true
 
       - name: Add Android Platform & Sync
@@ -39,6 +45,7 @@ jobs:
       - name: Build Debug APK
         run: |
           cd android
+          chmod +x gradlew
           ./gradlew assembleDebug
 
       - name: Upload APK Artifact
