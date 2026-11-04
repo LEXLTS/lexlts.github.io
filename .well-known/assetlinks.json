@@ -1,1 +1,9 @@
 
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "io.github.lexlts.twa",
+        "sha256_cert_fingerprints": ["17:EF:93:85:2A:C5:96:70:CA:0E:45:5E:4B:3A:DB:83:C5:FC:38:FF:8A:5E:2E:D3:71:51:59:FD:61:05:0A:D6"]
+      }
+    }]
