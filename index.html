@@ -5,15 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>GeoSnap</title>
     <link rel="manifest" href="/manifest.json">
-    <meta name="theme-color" content="#ffffff">
+    <meta name="theme-color" content="#222222">
     <style>
-        :root {
-            --primary: #007bff;
-            --bg-dark: #222;
-            --text-light: #fff;
-            --bottom-bar-height: 80px;
-        }
-
+        * { box-sizing: border-box; }
         body, html {
             margin: 0;
             padding: 0;
@@ -21,11 +15,10 @@
             height: 100%;
             overflow: hidden;
             background-color: #000;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            color: var(--text-light);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            color: #fff;
         }
 
-        /* --- Global Layout Containers --- */
         #app-wrapper {
             width: 100%;
             height: 100%;
@@ -34,238 +27,240 @@
             position: relative;
         }
 
-        /* Standard Camera Preview */
-        #camera-feed {
+        #camera-feed-container {
             flex: 1;
-            background-color: #333; /* Placeholder */
             position: relative;
+            background-color: #000;
             display: flex;
             justify-content: center;
             align-items: center;
             overflow: hidden;
         }
 
-        /* Lock aspect ratio within preview (16:9 example) */
-        #aspect-ratio-frame {
-            aspect-ratio: 16 / 9;
+        #webcam-video {
             width: 100%;
-            height: auto;
-            max-width: 100%;
-            max-height: 100%;
-            background-color: #000;
+            height: 100%;
+            object-fit: cover;
         }
 
-        /* Standard Bottom Control Bar (Fixed) */
+        /* --- Bottom Control Bar --- */
         #bottom-control-bar {
-            height: var(--bottom-bar-height);
-            background-color: var(--bg-dark);
+            height: 90px;
+            background-color: #111;
             display: flex;
-            justify-content: center;
+            justify-content: space-around;
             align-items: center;
             z-index: 10;
+            flex-shrink: 0;
+            padding: 0 20px;
         }
 
         .capture-btn {
-            width: 60px;
-            height: 60px;
+            width: 65px;
+            height: 65px;
             border-radius: 50%;
-            background-color: var(--text-light);
-            border: 5px solid #fff;
-            box-shadow: 0 0 10px rgba(255,255,255,0.5);
+            background-color: #fff;
+            border: 5px solid #444;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+        }
+
+        .nav-icon-btn {
+            background: rgba(255,255,255,0.1);
+            border: none;
+            color: #fff;
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-size: 13px;
             cursor: pointer;
         }
 
-        /* --- STATE 1: Startup Configuration --- */
+        /* --- STATE 1: Startup Configuration Modal --- */
         #startup-config-overlay {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
-            height: calc(100% - var(--bottom-bar-height));
-            background-color: rgba(0, 0, 0, 0.8);
-            backdrop-filter: blur(10px);
-            z-index: 50;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(8px);
+            z-index: 100;
             display: flex;
             justify-content: center;
             align-items: center;
-            opacity: 1;
-            transition: opacity 0.5s ease;
+            padding: 20px;
         }
 
-        #startup-config-overlay.hidden {
-            display: none;
-            opacity: 0;
-            pointer-events: none;
-        }
+        #startup-config-overlay.hidden { display: none; }
 
         .config-modal {
             background-color: #fff;
             color: #000;
-            width: 90%;
-            max-width: 400px;
+            width: 100%;
+            max-width: 380px;
             padding: 20px;
-            border-radius: 12px;
+            border-radius: 14px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            max-height: 90vh;
+            overflow-y: auto;
         }
 
-        .config-modal h2 { text-align: center; margin-top: 0; }
-        .config-modal label { display: block; margin: 10px 0 5px; font-weight: bold; }
+        .config-modal h2 { text-align: center; margin-top: 0; font-size: 20px; color: #111; }
+        .config-modal label { display: block; margin: 10px 0 4px; font-weight: bold; font-size: 14px; }
         .config-modal input, .config-modal select, .config-modal textarea {
             width: 100%;
             padding: 10px;
-            margin-bottom: 10px;
             border: 1px solid #ccc;
             border-radius: 6px;
-            font-size: 16px;
+            font-size: 15px;
         }
+        .config-modal textarea { resize: none; height: 60px; }
         
         #start-camera-btn {
             display: block;
             width: 100%;
-            padding: 15px;
-            background-color: var(--primary);
+            padding: 14px;
+            background-color: #007bff;
             color: #fff;
             border: none;
             border-radius: 8px;
-            font-size: 18px;
+            font-size: 16px;
             font-weight: bold;
             cursor: pointer;
-            margin-top: 10px;
+            margin-top: 15px;
         }
 
-        /* --- STATE 2: Live Camera with 3-Dot Menu --- */
-        #live-controls-overlay {
+        /* --- Top Controls & 3-Dot Menu --- */
+        #top-controls {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 55px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+            z-index: 30;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.7), transparent);
+        }
+
+        #top-controls h3 { margin: 0; font-size: 18px; letter-spacing: 1px; }
+
+        #menu-dots {
+            width: 35px;
+            height: 35px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+            background: rgba(0,0,0,0.4);
+            border-radius: 50%;
+        }
+        #menu-dots span { width: 5px; height: 5px; background-color: #fff; border-radius: 50%; }
+
+        /* Slide-out Menu */
+        #side-menu {
+            position: absolute;
+            top: 55px;
+            right: 0;
+            width: 240px;
+            height: calc(100% - 55px - 90px);
+            background-color: rgba(20, 20, 20, 0.95);
+            backdrop-filter: blur(10px);
+            border-left: 1px solid #333;
+            padding: 15px;
+            z-index: 40;
+            transform: translateX(100%);
+            transition: transform 0.3s ease-in-out;
+            overflow-y: auto;
+        }
+        #side-menu.open { transform: translateX(0); }
+        #side-menu h4 { color: #007bff; margin: 15px 0 8px 0; font-size: 13px; text-transform: uppercase; border-bottom: 1px solid #333; padding-bottom: 4px; }
+        #side-menu h4:first-child { margin-top: 0; }
+        #side-menu ul { list-style: none; padding: 0; margin: 0; }
+        #side-menu li { padding: 10px 8px; font-size: 14px; border-bottom: 1px solid #2a2a2a; cursor: pointer; }
+        #side-menu li:hover { background: rgba(255,255,255,0.1); }
+
+        /* --- PREVIEW GALLERY MODAL --- */
+        #preview-modal {
             position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            z-index: 20;
-            pointer-events: none; /* Let clicks pass through to standard elements below */
+            background-color: rgba(0,0,0,0.95);
+            z-index: 150;
             display: none;
-        }
-
-        #live-controls-overlay.active { display: block; }
-
-        /* --- Fixed Gesture Sliders (Always Visible but pass clicks) --- */
-        /* ZOOM (Vertical, Right) */
-        .zoom-slider-container {
-            position: absolute;
-            top: 50%;
-            right: 15px;
-            transform: translateY(-50%);
-            width: 40px;
-            height: 200px;
-            pointer-events: auto; /* Buttons are clickable */
-            display: flex;
             flex-direction: column;
-            justify-content: space-around;
-            align-items: center;
-            color: #fff;
-            background: rgba(0,0,0,0.3);
-            border-radius: 20px;
+            padding: 20px;
         }
-
-        /* BRIGHTNESS (Horizontal, Bottom) */
-        .brightness-slider-container {
-            position: absolute;
-            bottom: 10px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 160px;
-            height: 30px;
-            pointer-events: auto;
-            color: #fff;
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-            background: rgba(0,0,0,0.3);
-            border-radius: 15px;
-        }
-
-        /* --- 3-Dot Menu Handling --- */
-        #top-controls {
-            height: 60px;
+        #preview-modal.active { display: flex; }
+        .preview-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 0 20px;
-            pointer-events: auto; /* Title and menu are clickable */
-            background-color: var(--bg-dark);
-            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+            margin-bottom: 15px;
         }
-
-        #top-controls h3 { margin: 0; }
-
-        #menu-dots {
-            font-size: 28px;
-            cursor: pointer;
+        .preview-header h2 { margin: 0; font-size: 18px; }
+        .close-preview { background: #ff4444; border: none; color: #fff; padding: 8px 15px; border-radius: 6px; cursor: pointer; }
+        
+        .gallery-grid {
+            flex: 1;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            overflow-y: auto;
+            padding-bottom: 20px;
+        }
+        .gallery-item {
+            background: #222;
+            border-radius: 8px;
+            overflow: hidden;
             display: flex;
             flex-direction: column;
-            gap: 4px;
+            border: 1px solid #444;
         }
-        #menu-dots span {
-            width: 5px; height: 5px;
-            background-color: var(--text-light);
-            border-radius: 50%;
-            transition: background 0.3s;
+        .gallery-item img {
+            width: 100%;
+            height: 120px;
+            object-fit: cover;
         }
-        #menu-dots.active span { background-color: var(--primary); }
-
-        /* The actual side menu (hidden by default) */
-        #side-menu {
-            position: absolute;
-            top: 60px;
-            right: 0;
-            width: 250px;
-            height: calc(100% - var(--bottom-bar-height) - 60px);
-            background-color: var(--bg-dark);
-            border-left: 2px solid #444;
-            padding: 20px;
-            box-shadow: -5px 0 15px rgba(0,0,0,0.5);
-            pointer-events: auto;
-            transform: translateX(100%);
-            transition: transform 0.3s ease-out;
-            overflow-y: auto;
+        .gallery-actions {
+            display: flex;
+            justify-content: space-around;
+            padding: 8px;
+            background: #151515;
         }
-
-        #side-menu.open { transform: translateX(0); }
-
-        #side-menu h3 {
-            color: var(--primary);
-            border-bottom: 1px solid #444;
-            padding-bottom: 8px;
-            margin-top: 20px;
-        }
-        #side-menu h3:first-child { margin-top: 0; }
-
-        #side-menu ul { list-style: none; padding: 0; margin: 0; }
-        #side-menu li {
-            padding: 12px 10px;
-            border-bottom: 1px solid #333;
+        .gallery-actions button {
+            background: none;
+            border: none;
+            color: #007bff;
+            font-size: 12px;
             cursor: pointer;
-            transition: background 0.2s;
         }
-        #side-menu li:hover { background-color: #333; }
+        .gallery-actions button.delete-btn { color: #ff4444; }
 
-        /* Utility classes */
-        .hidden { display: none !important; }
+        /* Gesture Controls */
+        .zoom-container {
+            position: absolute; right: 15px; top: 50%; transform: translateY(-50%);
+            background: rgba(0,0,0,0.5); padding: 12px 6px; border-radius: 20px;
+            display: flex; flex-direction: column; align-items: center; gap: 15px; z-index: 20; font-size: 12px;
+        }
+        .brightness-container {
+            position: absolute; bottom: 105px; left: 50%; transform: translateX(-50%);
+            background: rgba(0,0,0,0.5); padding: 6px 15px; border-radius: 15px;
+            display: flex; align-items: center; gap: 10px; z-index: 20; font-size: 12px;
+        }
     </style>
 </head>
 <body>
 
     <div id="app-wrapper">
 
-        <!-- --- GLOBAL: Camera Feed Area --- -->
-        <div id="camera-feed">
-            <!-- Frame locking the specific aspect ratio inside the preview -->
-            <div id="aspect-ratio-frame">
-                <!-- Camera data will render here -->
-                <div style="color:#555; text-align:center; padding-top:20%;">Camera Preview</div>
-            </div>
-        </div>
-
-        <!-- --- STATE 1: Startup Config Overlay --- -->
+        <!-- --- STATE 1: Startup Configuration Modal --- -->
         <div id="startup-config-overlay">
             <div class="config-modal">
                 <h2>CONFIGURE GEOSNAP</h2>
@@ -278,165 +273,175 @@
                     <option value="food">Food Field</option>
                 </select>
 
-                <label>Project / Code:</label>
-                <input type="text" id="project-code" value="GS-2026-IT-01">
+                <label>Project Code:</label>
+                <input type="text" id="project-code" value="GS-2026-001">
 
-                <label>Zone / Site:</label>
-                <input type="text" id="zone-input" value="Singapore HO">
+                <label>Zone / Location:</label>
+                <input type="text" id="zone-input" value="Zone A">
+
+                <label>Site In Charge:</label>
+                <input type="text" id="manager-input" value="Manager Name">
 
                 <label>Ongoing Activities:</label>
-                <textarea id="activities-input">System Maintenance</textarea>
+                <textarea id="activities-input">Site inspection & monitoring</textarea>
                 
                 <button id="start-camera-btn">START CAMERA</button>
             </div>
         </div>
 
-        <!-- --- STATE 2: Live Controls & 3-Dot Menu --- -->
-        <div id="live-controls-overlay">
-            
-            <!-- Top Controls Fixed -->
-            <div id="top-controls">
-                <h3>GEOSNAP</h3>
-                <div id="menu-dots" onclick="toggleMenu()">
-                    <span></span><span></span><span></span>
-                </div>
-            </div>
-
-            <!-- Lock standard gesture sliders on live view -->
-            <div class="zoom-slider-container">
-                <div>+</div>
-                <div style="font-size:12px;">ZOOM</div>
-                <div>-</div>
-            </div>
-
-            <div class="brightness-slider-container">
-                <div>*</div>
-                <div style="font-size:12px;">BRIGHTNESS (Hiz)</div>
-                <div>*</div>
-            </div>
-
-            <!-- Slide-out Menu -->
-            <div id="side-menu">
-                <h3>SECTORS</h3>
-                <ul id="sector-menu-list">
-                    <li>Construction</li>
-                    <li>IT Field</li>
-                    <li>Cleaning</li>
-                    <li>Food Field</li>
-                </ul>
-
-                <h3>IMAGE OPTIONS</h3>
-                <ul>
-                    <li>Grid View</li>
-                    <li>Print</li>
-                    <li>Delete</li>
-                    <li>Info 'i'</li>
-                    <li>Custom Filenames</li>
-                </ul>
-
-                <h3>CONTROLS</h3>
-                <ul>
-                    <li>Zoom (+/-)</li>
-                    <li>Settings</li>
-                </ul>
+        <!-- --- LIVE CAMERA FEED & OVERLAYS --- -->
+        <div id="top-controls">
+            <h3 id="display-project-title">GEOSNAP</h3>
+            <div id="menu-dots" onclick="toggleMenu()">
+                <span></span><span></span><span></span>
             </div>
         </div>
 
-        <!-- --- GLOBAL: Bottom Bar Fixed --- -->
+        <div id="camera-feed-container">
+            <video id="webcam-video" autoplay playsinline muted></video>
+            
+            <div class="zoom-container">
+                <span>+</span><span>ZOOM</span><span>-</span>
+            </div>
+
+            <div class="brightness-container">
+                <span>☀️</span><span>BRIGHTNESS</span>
+            </div>
+        </div>
+
+        <!-- Side Menu -->
+        <div id="side-menu">
+            <h4>Sectors</h4>
+            <ul>
+                <li onclick="setSector('Construction')">Construction</li>
+                <li onclick="setSector('IT Field')">IT Field</li>
+                <li onclick="setSector('Cleaning')">Cleaning</li>
+                <li onclick="setSector('Food Field')">Food Field</li>
+            </ul>
+            <h4>Image Options</h4>
+            <ul>
+                <li onclick="openPreviewGallery()">Grid View / Preview</li>
+                <li onclick="openPreviewGallery()">Print</li>
+                <li onclick="openPreviewGallery()">Info 'i'</li>
+            </ul>
+        </div>
+
+        <!-- --- PREVIEW GALLERY MODAL --- -->
+        <div id="preview-modal">
+            <div class="preview-header">
+                <h2>CAPTURED MEDIA GALLERY</h2>
+                <button class="close-preview" onclick="closePreviewGallery()">Close</button>
+            </div>
+            <div class="gallery-grid" id="gallery-container">
+                <!-- Dynamically populated captured items -->
+            </div>
+        </div>
+
+        <!-- --- Bottom Control Bar --- -->
         <div id="bottom-control-bar">
-            <div class="capture-btn" id="capture-button"></div>
+            <button class="nav-icon-btn" onclick="openPreviewGallery()">PREVIEW</button>
+            <div class="capture-btn" id="capture-button" onclick="capturePhoto()"></div>
+            <button class="nav-icon-btn" onclick="alert('Settings / Info panel')">INFO i</button>
         </div>
 
     </div>
 
     <script>
-        // --- Screen Management Logic ---
-        const startupOverlay = document.getElementById('startup-config-overlay');
-        const liveOverlay = document.getElementById('live-controls-overlay');
         const startBtn = document.getElementById('start-camera-btn');
-        const captureBtn = document.getElementById('capture-button');
+        const startupOverlay = document.getElementById('startup-config-overlay');
+        const videoElement = document.getElementById('webcam-video');
         
-        // Start App and Switch Screens
-        startBtn.addEventListener('click', function() {
-            startupOverlay.classList.add('hidden');
-            liveOverlay.classList.add('active');
-            
-            // Re-use current GeoSnap filename logic here
-            alert("Camera started with config: " + document.getElementById('project-code').value);
-        });
+        let capturedMediaArray = [];
 
-        // Capture Button action (Placeholder)
-        captureBtn.addEventListener('click', function() {
-            if (liveOverlay.classList.contains('active')) {
-                // Implement timestamp filename logic here
-                alert("Photo Captured! Saving...");
+        startBtn.addEventListener('click', async () => {
+            startupOverlay.classList.add('hidden');
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: { exact: "environment" } },
+                    audio: false
+                }).catch(() => navigator.mediaDevices.getUserMedia({ video: true, audio: false }));
+                videoElement.srcObject = stream;
+            } catch (err) {
+                alert("Camera access error: " + err.message);
             }
         });
-
-        // --- 3-Dot Menu Logic ---
-        const menuDots = document.getElementById('menu-dots');
-        const sideMenu = document.getElementById('side-menu');
 
         function toggleMenu() {
-            const isOpen = sideMenu.classList.contains('open');
-            
-            if (!isOpen) {
-                // Open the menu
-                sideMenu.classList.add('open');
-                menuDots.classList.add('active');
-                
-                // Add click listener to document to close if clicking outside
-                setTimeout(() => {
-                    document.addEventListener('click', closeMenuOutside);
-                }, 0);
-                
+            document.getElementById('side-menu').classList.toggle('open');
+        }
+
+        function setSector(sectorName) {
+            document.getElementById('display-project-title').innerText = "GEOSNAP (" + sectorName + ")";
+            toggleMenu();
+        }
+
+        // Capture photo silently and add to local gallery array (No Chrome download bar)
+        function capturePhoto() {
+            const now = new Date();
+            const timestamp = now.toISOString().replace(/[:.]/g, '-');
+            const projectCode = document.getElementById('project-code').value || 'GeoSnap';
+            const fileName = `${projectCode}_${timestamp}.jpg`;
+
+            const canvas = document.createElement('canvas');
+            canvas.width = videoElement.videoWidth || 1280;
+            canvas.height = videoElement.videoHeight || 720;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+
+            const dataUrl = canvas.toDataURL('image/jpeg');
+
+            // Save into local app gallery array
+            capturedMediaArray.unshift({ name: fileName, data: dataUrl, time: new Date().toLocaleTimeString() });
+
+            // Optional: trigger native share or silent save notification
+            navigator.vibrate && navigator.vibrate(50);
+            alert("Photo saved successfully: " + fileName);
+        }
+
+        // Open Gallery Modal
+        function openPreviewGallery() {
+            const container = document.getElementById('gallery-container');
+            container.innerHTML = '';
+
+            if (capturedMediaArray.length === 0) {
+                container.innerHTML = '<p style="grid-column: span 2; text-align:center; color:#777;">No photos captured yet.</p>';
             } else {
-                // Close the menu
-                closeMenu();
+                capturedMediaArray.forEach((item, index) => {
+                    const div = document.createElement('div');
+                    div.className = 'gallery-item';
+                    div.innerHTML = `
+                        <img src="${item.data}" alt="${item.name}">
+                        <div style="padding: 5px; font-size: 11px; color: #ccc;">${item.name}</div>
+                        <div class="gallery-actions">
+                            <button onclick="sharePhoto(${index})">Share</button>
+                            <button onclick="editPhoto(${index})">Edit</button>
+                            <button class="delete-btn" onclick="deletePhoto(${index})">Delete</button>
+                        </div>
+                    `;
+                    container.appendChild(div);
+                });
             }
+
+            document.getElementById('preview-modal').classList.add('active');
+            document.getElementById('side-menu').classList.remove('open');
         }
 
-        function closeMenuOutside(event) {
-            // Close if clicking outside the side menu and not on the dots icon
-            if (!sideMenu.contains(event.target) && !menuDots.contains(event.target)) {
-                closeMenu();
-            }
+        function closePreviewGallery() {
+            document.getElementById('preview-modal').classList.remove('active');
         }
 
-        function closeMenu() {
-            sideMenu.classList.remove('open');
-            menuDots.classList.remove('active');
-            document.removeEventListener('click', closeMenuOutside);
+        function deletePhoto(index) {
+            capturedMediaArray.splice(index, 1);
+            openPreviewGallery();
         }
 
-        // --- Sector Selection Logic ---
-        const sectorList = document.getElementById('sector-menu-list');
-        const mainSectorDropdown = document.getElementById('sector-select');
+        function sharePhoto(index) {
+            alert("Sharing photo: " + capturedMediaArray[index].name);
+        }
 
-        // Link menu selections back to the main dropdown (for logic continuity)
-        sectorList.addEventListener('click', function(e) {
-            if (e.target && e.target.nodeName === "LI") {
-                const sectorName = e.target.innerText;
-                const normalizedSector = sectorName.toLowerCase().replace(/\s+/g, '-');
-
-                // Map the clicked name to the value of the main dropdown
-                for (let option of mainSectorDropdown.options) {
-                    if (option.value.includes(normalizedSector) || normalizedSector.includes(option.value)) {
-                        mainSectorDropdown.value = option.value;
-                        break;
-                    }
-                }
-
-                alert("Sector changed to: " + sectorName);
-                closeMenu();
-            }
-        });
-
-        // Handle Orientation Change to reposition sliders if needed (conceptual)
-        window.addEventListener('orientationchange', function() {
-            // Screen orientation is locked in PWA TWA usually, but logic would go here.
-            // Conceptual rotation of brightness label logic would fire here.
-        });
+        function editPhoto(index) {
+            alert("Opening edit mode for: " + capturedMediaArray[index].name);
+        }
     </script>
 </body>
 </html>
