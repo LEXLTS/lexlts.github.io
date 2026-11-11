@@ -30,8 +30,9 @@
 
         #webcam-video { width: 100%; height: 100%; object-fit: cover; }
         #watermark-canvas { display: none; }
+        #video-canvas { display: none; }
 
-        /* Live Overlay HUD for Real-Time Preview on Viewfinder */
+        /* Real-Time Live HUD Preview Overlay */
         #live-hud-overlay {
             position: absolute; bottom: 15px; left: 15px; z-index: 20;
             color: #ffffff; font-size: 13px; font-weight: 600;
@@ -140,7 +141,7 @@
             border-top: 1px solid #ddd; z-index: 10; flex-shrink: 0;
         }
 
-        /* Sleek Redesigned Preview Gallery Modal (Single Column Stream, Compact Cards) */
+        /* Preview Gallery Modal */
         #preview-modal {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background-color: #f8f9fa; z-index: 150; display: none; flex-direction: column; padding: 15px;
@@ -210,17 +211,18 @@
                 <option value="1:1">1:1</option>
             </select>
 
-            <button class="icon-top-btn" onclick="toggleMenu()" title="Settings">
+            <button class="icon-top-btn" onclick="toggleMenu(event)" title="Settings">
                 <svg viewBox="0 0 24 24"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
             </button>
         </div>
 
         <!-- Camera Feed & Interactive Sliders -->
-        <div id="camera-feed-container">
+        <div id="camera-feed-container" onclick="handleScreenTap(event)">
             <div id="aspect-ratio-wrapper">
                 <video id="webcam-video" autoplay playsinline muted></video>
             </div>
             <canvas id="watermark-canvas"></canvas>
+            <canvas id="video-canvas"></canvas>
 
             <!-- Real-Time Live HUD Preview Overlay -->
             <div id="live-hud-overlay">
@@ -230,22 +232,30 @@
             </div>
 
             <!-- Vertical Zoom Slider -->
-            <div class="zoom-slider-container">
+            <div class="zoom-slider-container" onclick="event.stopPropagation()">
                 <span>+</span>
                 <input type="range" id="zoom-range" min="1" max="3" step="0.1" value="1" oninput="adjustZoom(this.value)">
                 <span>-</span>
             </div>
 
             <!-- Horizontal Brightness Slider (0% to 200%) -->
-            <div class="brightness-container">
+            <div class="brightness-container" onclick="event.stopPropagation()">
                 <span>☀️</span>
                 <input type="range" id="brightness-range" min="0" max="200" value="100" oninput="adjustBrightness(this.value)">
             </div>
         </div>
 
         <!-- 3-Dot Drawer with Accordion Feature Controls & Video Format Selector -->
-        <div id="side-menu">
+        <div id="side-menu" onclick="event.stopPropagation()">
             <h4>Feature Customizations</h4>
+
+            <!-- Auto-Save Storage Toggle -->
+            <div class="feature-item">
+                <div class="feature-header">
+                    <span>Auto Save Media (No Prompt)</span>
+                    <label class="toggle-switch"><input type="checkbox" id="toggle-autosave" checked><span class="slider"></span></label>
+                </div>
+            </div>
             
             <!-- Video Format Selector -->
             <div class="feature-item">
@@ -433,7 +443,7 @@
         </div>
 
         <!-- Bottom Navigation Bar: 5 Pure Icon Buttons -->
-        <div id="bottom-control-bar">
+        <div id="bottom-control-bar" onclick="event.stopPropagation()">
             <button class="bottom-icon-btn" id="btn-loc-toggle" onclick="toggleLocationQuick()" title="GPS Location">
                 <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
             </button>
@@ -484,7 +494,6 @@
         let currentEditIndex = -1;
         let editImageObj = new Image();
 
-        // High-performance consolidated HUD updater
         function refreshLiveHUD() {
             const now = new Date();
             if (!isVideoRecording) {
@@ -557,6 +566,13 @@
             fetchCurrentGPS();
         }
 
+        function handleScreenTap(event) {
+            const sideMenu = document.getElementById('side-menu');
+            if (sideMenu.classList.contains('open')) {
+                sideMenu.classList.remove('open');
+            }
+        }
+
         async function initCamera() {
             try {
                 if (mediaStream) {
@@ -583,22 +599,11 @@
         }
         initCamera();
 
-        function toggleMenu() {
+        function toggleMenu(event) {
+            if (event) event.stopPropagation();
             document.getElementById('side-menu').classList.toggle('open');
         }
 
-        function toggleFeaturePanel(featureId) {
-            const toggle = document.getElementById(`toggle-${featureId}`);
-            const panel = document.getElementById(`panel-${featureId}`);
-            if (toggle.checked) {
-                panel.classList.add('active');
-            } else {
-                panel.classList.remove('active');
-            }
-            refreshLiveHUD();
-        }
-
-        // Attach listeners to toggles for instant live preview updates
         document.querySelectorAll('.toggle-switch input').forEach(el => {
             el.addEventListener('change', () => {
                 const panelId = el.id.replace('toggle-', 'panel-');
@@ -671,15 +676,22 @@
             const ext = format === 'mp4' ? 'mp4' : 'webm';
             
             try {
-                let mimeType = format === 'mp4' ? 'video/mp4' : 'video/webm;codecs=vp9,opus';
-                if (!MediaRecorder.isTypeSupported(mimeType)) {
-                    mimeType = 'video/webm';
+                let options = { mimeType: format === 'mp4' ? 'video/mp4' : 'video/webm;codecs=vp9,opus' };
+                if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+                    options = { mimeType: 'video/webm' };
+                }
+                if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+                    options = {};
                 }
 
-                mediaRecorder = new MediaRecorder(mediaStream, { mimeType: mimeType });
-                mediaRecorder.ondataavailable = event => { if (event.data.size > 0) recordedChunks.push(event.data); };
+                mediaRecorder = new MediaRecorder(mediaStream, options);
+                mediaRecorder.ondataavailable = event => {
+                    if (event.data && event.data.size > 0) {
+                        recordedChunks.push(event.data);
+                    }
+                };
                 mediaRecorder.onstop = async () => {
-                    const blob = new Blob(recordedChunks, { type: mimeType });
+                    const blob = new Blob(recordedChunks, { type: mediaRecorder.mimeType || 'video/webm' });
                     const url = URL.createObjectURL(blob);
                     const now = new Date();
                     const fileName = `GeoSnap_Video_${now.toISOString().replace(/[:.]/g, '-')}.${ext}`;
@@ -687,7 +699,7 @@
                     
                     await saveFileToDevice(blob, fileName);
                 };
-                mediaRecorder.start(100);
+                mediaRecorder.start(250);
 
                 recordingTimerInterval = setInterval(() => {
                     recordingSeconds++;
@@ -713,15 +725,18 @@
             refreshLiveHUD();
         }
 
+        // Automatic Download File Storage System (Bypasses Save Picker when Auto Save is On)
         async function saveFileToDevice(blobOrUrl, fileName, isDataUrl = false) {
-            try {
-                let blob = blobOrUrl;
-                if (isDataUrl) {
-                    const res = await fetch(blobOrUrl);
-                    blob = await res.blob();
-                }
+            const isAutoSave = document.getElementById('toggle-autosave').checked;
+            let blob = blobOrUrl;
 
-                if (window.showSaveFilePicker) {
+            if (isDataUrl) {
+                const res = await fetch(blobOrUrl);
+                blob = await res.blob();
+            }
+
+            if (!isAutoSave && window.showSaveFilePicker) {
+                try {
                     const handle = await window.showSaveFilePicker({
                         suggestedName: fileName,
                         types: [{ description: 'Media File', accept: { 'image/jpeg': ['.jpg'], 'video/mp4': ['.mp4'], 'video/webm': ['.webm'] } }]
@@ -730,11 +745,12 @@
                     await writable.write(blob);
                     await writable.close();
                     return;
+                } catch (err) {
+                    console.log("File picker cancelled, using automatic download.");
                 }
-            } catch (err) {
-                console.log("File picker cancelled or unavailable, using auto download fallback.");
             }
 
+            // Direct silent auto-download pipeline (No file picker modal prompt)
             const a = document.createElement('a');
             a.href = typeof blobOrUrl === 'string' ? blobOrUrl : URL.createObjectURL(blobOrUrl);
             a.download = fileName;
@@ -801,7 +817,7 @@
 
                 lines.forEach((line, index) => {
                     ctx.font = 'bold 26px sans-serif';
-                    ctx.fillText(line, 45, startY + (index * 36)); // Strict flush left alignment X=45
+                    ctx.fillText(line, 45, startY + (index * 36));
                 });
             }
 
@@ -815,7 +831,6 @@
             await saveFileToDevice(dataUrl, fileName, true);
         }
 
-        // Sleek Redesigned Preview Gallery Stream
         function openPreviewGallery() {
             const container = document.getElementById('gallery-container');
             container.innerHTML = '';
