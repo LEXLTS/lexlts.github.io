@@ -5,20 +5,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>GeoSnap</title>
     <link rel="manifest" href="/manifest.json">
-    <meta name="theme-color" content="#111111">
+    <meta name="theme-color" content="#ffffff">
     <style>
         * { box-sizing: border-box; }
         body, html {
             margin: 0; padding: 0; width: 100%; height: 100%;
-            overflow: hidden; background-color: #000;
+            overflow: hidden; background-color: #f8f9fa;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            color: #fff;
+            color: #222;
         }
         #app-wrapper { width: 100%; height: 100%; display: flex; flex-direction: column; position: relative; }
 
-        /* Camera Feed & Gestures */
+        /* Camera Feed Area */
         #camera-feed-container {
-            flex: 1; position: relative; background-color: #000;
+            flex: 1; position: relative; background-color: #e9ecef;
             display: flex; justify-content: center; align-items: center; overflow: hidden;
         }
         #webcam-video { width: 100%; height: 100%; object-fit: cover; }
@@ -26,85 +26,95 @@
 
         /* Zoom Slider (Vertical - Right) */
         .zoom-slider-container {
-            position: absolute; right: 15px; top: 50%; transform: translateY(-50%);
-            background: rgba(0,0,0,0.6); padding: 10px 6px; border-radius: 20px;
+            position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+            background: rgba(255, 255, 255, 0.9); padding: 12px 6px; border-radius: 20px;
             display: flex; flex-direction: column; align-items: center; gap: 10px; z-index: 25;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15); color: #ff7700; font-weight: bold;
         }
         .zoom-slider-container input[type=range] {
-            writing-mode: vertical-lr; direction: rtl; height: 120px; accent-color: #007bff; cursor: pointer;
+            writing-mode: vertical-lr; direction: rtl; height: 120px; accent-color: #ff7700; cursor: pointer;
         }
 
-        /* Brightness Slider (Horizontal - Bottom above controls) */
+        /* Brightness Slider (Horizontal - Bottom Overlay) */
         .brightness-container {
-            position: absolute; bottom: 100px; left: 50%; transform: translateX(-50%);
-            background: rgba(0,0,0,0.6); padding: 6px 15px; border-radius: 15px;
-            display: flex; align-items: center; gap: 10px; z-index: 25; width: 200px;
+            position: absolute; bottom: 15px; left: 50%; transform: translateX(-50%);
+            background: rgba(255, 255, 255, 0.9); padding: 8px 18px; border-radius: 20px;
+            display: flex; align-items: center; gap: 10px; z-index: 25; width: 220px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15); color: #ff7700; font-weight: bold;
         }
-        .brightness-container input[type=range] { width: 100%; accent-color: #ffc107; cursor: pointer; }
+        .brightness-container input[type=range] { width: 100%; accent-color: #ff7700; cursor: pointer; }
 
-        /* Top Bar */
+        /* Top Bar - Clean White Theme */
         #top-controls {
             position: absolute; top: 0; left: 0; width: 100%; height: 60px;
             display: flex; justify-content: space-between; align-items: center; padding: 0 15px;
-            z-index: 30; background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent);
+            z-index: 30; background: rgba(255, 255, 255, 0.92); backdrop-filter: blur(8px);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
         }
-        .top-btn, #menu-dots {
-            background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); color: #fff;
-            padding: 8px 12px; border-radius: 8px; font-size: 12px; cursor: pointer;
+        .top-btn {
+            background: #fff3eb; border: 1px solid #ffccaa; color: #ff5500;
+            padding: 8px 14px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer;
         }
-        #menu-dots { display: flex; flex-direction: column; gap: 3px; justify-content: center; align-items: center; width: 36px; height: 36px; padding: 0; }
-        #menu-dots span { width: 4px; height: 4px; background-color: #fff; border-radius: 50%; }
+        #menu-dots {
+            display: flex; flex-direction: column; gap: 4px; justify-content: center; align-items: center;
+            width: 38px; height: 38px; background: #fff3eb; border-radius: 50%; border: 1px solid #ffccaa; cursor: pointer;
+        }
+        #menu-dots span { width: 5px; height: 5px; background-color: #ff5500; border-radius: 50%; }
 
         /* Side Settings Menu */
         #side-menu {
             position: absolute; top: 60px; right: 0; width: 300px;
-            height: calc(100% - 60px - 90px); background-color: rgba(15, 15, 15, 0.98);
-            backdrop-filter: blur(12px); border-left: 1px solid #333; padding: 15px;
+            height: calc(100% - 60px - 95px); background-color: #ffffff;
+            border-left: 1px solid #e0e0e0; padding: 18px;
             z-index: 40; transform: translateX(100%); transition: transform 0.3s ease-in-out;
-            overflow-y: auto; font-size: 13px;
+            overflow-y: auto; font-size: 13px; color: #333; box-shadow: -5px 0 20px rgba(0,0,0,0.1);
         }
         #side-menu.open { transform: translateX(0); }
-        #side-menu h4 { color: #007bff; margin: 15px 0 8px 0; border-bottom: 1px solid #333; padding-bottom: 4px; }
-        #side-menu label { display: block; margin: 8px 0 2px; color: #aaa; }
+        #side-menu h4 { color: #ff7700; margin: 15px 0 8px 0; border-bottom: 2px solid #ffe5d4; padding-bottom: 4px; font-size: 14px; }
+        #side-menu label { display: block; margin: 8px 0 3px; color: #666; font-weight: 500; }
         #side-menu input, #side-menu select, #side-menu textarea {
-            width: 100%; padding: 7px; background: #222; border: 1px solid #444; color: #fff; border-radius: 4px; font-size: 12px;
+            width: 100%; padding: 8px; background: #fafafa; border: 1px solid #ddd; color: #222; border-radius: 6px; font-size: 13px;
         }
-        .checkbox-group { display: flex; align-items: center; gap: 8px; margin: 6px 0; font-size: 12px; color: #ddd; cursor: pointer; }
-        .checkbox-group input { width: 16px; height: 16px; accent-color: #007bff; cursor: pointer; }
+        .checkbox-group { display: flex; align-items: center; gap: 10px; margin: 8px 0; font-size: 13px; color: #444; cursor: pointer; }
+        .checkbox-group input { width: 18px; height: 18px; accent-color: #ff7700; cursor: pointer; }
 
-        /* Bottom Controls */
+        /* Bottom Controls - Light Orange Theme */
         #bottom-control-bar {
-            height: 90px; background-color: #111; display: flex;
-            justify-content: space-around; align-items: center; z-index: 10; flex-shrink: 0; padding: 0 10px;
+            height: 95px; background-color: #ffffff; display: flex;
+            justify-content: space-around; align-items: center; z-index: 10; flex-shrink: 0; padding: 0 15px;
+            border-top: 1px solid #eaeaea;
         }
         .bottom-icon-btn {
-            background: rgba(255,255,255,0.1); border: none; color: #fff;
-            padding: 8px 10px; border-radius: 8px; font-size: 11px; cursor: pointer; text-align: center;
+            background: #fff3eb; border: 1px solid #ffd8c2; color: #ff5500;
+            padding: 10px 14px; border-radius: 12px; font-size: 12px; font-weight: bold; cursor: pointer; text-align: center;
         }
-        .bottom-icon-btn.active { background: #007bff; }
+        .bottom-icon-btn.active { background: #ff7700; color: #fff; border-color: #ff7700; }
+        
         .capture-btn {
-            width: 65px; height: 65px; border-radius: 50%; background-color: #fff;
-            border: 5px solid #444; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            width: 70px; height: 70px; border-radius: 50%; background: linear-gradient(135deg, #ff9900, #ff5500);
+            border: 4px solid #fff; cursor: pointer; box-shadow: 0 4px 15px rgba(255, 119, 0, 0.4);
+            display: flex; justify-content: center; align-items: center;
         }
+        .capture-btn-inner { width: 54px; height: 54px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.8); }
 
         /* Preview Modal */
         #preview-modal {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background-color: rgba(0,0,0,0.95); z-index: 150; display: none; flex-direction: column; padding: 20px;
+            background-color: #ffffff; z-index: 150; display: none; flex-direction: column; padding: 20px;
         }
         #preview-modal.active { display: flex; }
         .gallery-grid { flex: 1; display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; overflow-y: auto; padding-top: 15px; }
-        .gallery-item { background: #222; border-radius: 8px; overflow: hidden; display: flex; flex-direction: column; border: 1px solid #444; }
-        .gallery-item img { width: 100%; height: 120px; object-fit: cover; }
-        .gallery-actions { display: flex; justify-content: space-around; padding: 8px; background: #151515; }
-        .gallery-actions button { background: none; border: none; color: #007bff; font-size: 12px; cursor: pointer; }
+        .gallery-item { background: #fafafa; border-radius: 10px; overflow: hidden; display: flex; flex-direction: column; border: 1px solid #eee; }
+        .gallery-item img { width: 100%; height: 130px; object-fit: cover; }
+        .gallery-actions { display: flex; justify-content: space-around; padding: 8px; background: #fff; border-top: 1px solid #eee; }
+        .gallery-actions button { background: none; border: none; color: #ff7700; font-size: 12px; font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
 
     <div id="app-wrapper">
 
-        <!-- Top Controls: Flash, Preview, 3-Dot Menu -->
+        <!-- Top Controls: White & Light Orange -->
         <div id="top-controls">
             <button class="top-btn" id="flash-btn" onclick="toggleFlash()">⚡ Flash: OFF</button>
             <button class="top-btn" onclick="openPreviewGallery()">📁 Preview</button>
@@ -120,5 +130,305 @@
 
             <!-- Vertical Zoom Slider -->
             <div class="zoom-slider-container">
-                <span style="font-size:10px;">+</span>
-                <input type="range" id="zoom-range" min="1" max="3" step="0.1" value="1" oninput="adjustZoom(
+                <span>+</span>
+                <input type="range" id="zoom-range" min="1" max="3" step="0.1" value="1" oninput="adjustZoom(this.value)">
+                <span>-</span>
+            </div>
+
+            <!-- Horizontal Brightness Slider -->
+            <div class="brightness-container">
+                <span>☀️</span>
+                <input type="range" id="brightness-range" min="50" max="150" value="100" oninput="adjustBrightness(this.value)">
+            </div>
+        </div>
+
+        <!-- 3-Dot Settings Menu -->
+        <div id="side-menu">
+            <h4>Watermark Options</h4>
+            <label class="checkbox-group"><input type="checkbox" id="opt-location" checked> Include GPS Location</label>
+            <label class="checkbox-group"><input type="checkbox" id="opt-timestamp" checked> Include Timestamp</label>
+            <label class="checkbox-group"><input type="checkbox" id="opt-sector" checked> Include Sector</label>
+            <label class="checkbox-group"><input type="checkbox" id="opt-project" checked> Include Project Code</label>
+            <label class="checkbox-group"><input type="checkbox" id="opt-incharge" checked> Include In-Charge</label>
+            <label class="checkbox-group"><input type="checkbox" id="opt-zone" checked> Include Zone</label>
+            <label class="checkbox-group"><input type="checkbox" id="opt-manpower" checked> Include Manpower</label>
+            <label class="checkbox-group"><input type="checkbox" id="opt-activities" checked> Include Activities</label>
+            <label class="checkbox-group"><input type="checkbox" id="opt-status" checked> Include Status</label>
+            <label class="checkbox-group"><input type="checkbox" id="opt-duration" checked> Include Period of Duration</label>
+            <label class="checkbox-group"><input type="checkbox" id="opt-expdate" checked> Include Expected Completion Date</label>
+            <label class="checkbox-group"><input type="checkbox" id="opt-subincharge" checked> Include Sub In-Charge</label>
+
+            <h4>Data Configuration</h4>
+            <label>Sector:</label>
+            <select id="sector-select">
+                <option value="Construction">Construction Field</option>
+                <option value="IT">IT Field</option>
+                <option value="Cleaning">Cleaning Field</option>
+                <option value="Food">Food Field</option>
+            </select>
+
+            <label>Project Code:</label>
+            <input type="text" id="project-code" value="GS-2026-001">
+            
+            <label>Zone / Location Name:</label>
+            <input type="text" id="zone-input" value="Site Alpha (Sg)">
+
+            <label>Site In Charge:</label>
+            <input type="text" id="manager-input" value="John Doe">
+
+            <label>Sub In Charge:</label>
+            <input type="text" id="submanager-input" value="Jane Smith">
+
+            <label>Manpower Count:</label>
+            <input type="text" id="manpower-input" value="12 Workers">
+
+            <label>Activities:</label>
+            <textarea id="activities-input">General Site Work</textarea>
+
+            <label>Status:</label>
+            <select id="status-select">
+                <option value="Incompleted">Incompleted</option>
+                <option value="Completed">Completed</option>
+            </select>
+
+            <label>Period of Duration:</label>
+            <input type="text" id="duration-input" value="3 Months">
+
+            <label>Expected Completion Date:</label>
+            <input type="text" id="expdate-input" value="31/12/2026">
+        </div>
+
+        <!-- Preview Modal Gallery -->
+        <div id="preview-modal">
+            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #eee; padding-bottom:10px;">
+                <h3 style="margin:0; color:#ff7700;">Captured Gallery</h3>
+                <button onclick="closePreviewGallery()" style="background:#ff4444; border:none; color:#fff; padding:6px 14px; border-radius:6px; font-weight:bold;">Close</button>
+            </div>
+            <div class="gallery-grid" id="gallery-container"></div>
+        </div>
+
+        <!-- Bottom Control Bar (Light Orange Main Button) -->
+        <div id="bottom-control-bar">
+            <button class="bottom-icon-btn active" id="loc-toggle-btn" onclick="toggleLocationQuick()">📍 Location</button>
+            <button class="bottom-icon-btn" id="video-toggle-btn" onclick="toggleVideoMode()">📹 Video</button>
+            <div class="capture-btn" id="capture-button" onclick="captureMedia()">
+                <div class="capture-btn-inner"></div>
+            </div>
+            <button class="bottom-icon-btn" onclick="switchCamera()">🔄 Switch</button>
+        </div>
+
+    </div>
+
+    <script>
+        const videoElement = document.getElementById('webcam-video');
+        let capturedMediaArray = [];
+        let currentFacingMode = 'environment';
+        let mediaStream = null;
+        let videoTrack = null;
+        let isVideoRecording = false;
+        let mediaRecorder = null;
+        let recordedChunks = [];
+        let flashState = false;
+
+        // Reliable Camera Initializer
+        async function initCamera() {
+            try {
+                if (mediaStream) {
+                    mediaStream.getTracks().forEach(track => track.stop());
+                }
+                // Stream video only to avoid permission locks
+                mediaStream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: { ideal: currentFacingMode } },
+                    audio: false
+                });
+                videoElement.srcObject = mediaStream;
+                videoTrack = mediaStream.getVideoTracks()[0];
+            } catch (err) {
+                console.warn("Fallback to basic camera constraints", err);
+                try {
+                    mediaStream = await navigator.mediaDevices.getUserMedia({ video: true });
+                    videoElement.srcObject = mediaStream;
+                    videoTrack = mediaStream.getVideoTracks()[0];
+                } catch (e) {
+                    alert("Camera initialization failed: " + e.message);
+                }
+            }
+        }
+        initCamera();
+
+        function toggleMenu() {
+            document.getElementById('side-menu').classList.toggle('open');
+        }
+
+        function toggleLocationQuick() {
+            const btn = document.getElementById('loc-toggle-btn');
+            const checkbox = document.getElementById('opt-location');
+            checkbox.checked = !checkbox.checked;
+            btn.classList.toggle('active', checkbox.checked);
+        }
+
+        function switchCamera() {
+            currentFacingMode = currentFacingMode === 'environment' ? 'user' : 'environment';
+            initCamera();
+        }
+
+        async function toggleFlash() {
+            if (!videoTrack) return;
+            try {
+                flashState = !flashState;
+                await videoTrack.applyConstraints({ advanced: [{ torch: flashState }] });
+                document.getElementById('flash-btn').innerText = `⚡ Flash: ${flashState ? 'ON' : 'OFF'}`;
+            } catch (e) {
+                alert("Flash torch not supported on this device camera.");
+            }
+        }
+
+        function adjustZoom(val) {
+            if (videoTrack && videoTrack.getCapabilities && videoTrack.getCapabilities().zoom) {
+                videoTrack.applyConstraints({ advanced: [{ zoom: parseFloat(val) }] });
+            } else {
+                videoElement.style.transform = `scale(${val})`;
+            }
+        }
+
+        function adjustBrightness(val) {
+            videoElement.style.filter = `brightness(${val}%)`;
+        }
+
+        function toggleVideoMode() {
+            isVideoRecording = !isVideoRecording;
+            const btn = document.getElementById('video-toggle-btn');
+            btn.classList.toggle('active', isVideoRecording);
+            btn.innerText = isVideoRecording ? "🔴 Recording" : "📹 Video";
+            if (isVideoRecording) {
+                startRecording();
+            } else {
+                stopRecording();
+            }
+        }
+
+        function startRecording() {
+            recordedChunks = [];
+            try {
+                mediaRecorder = new MediaRecorder(mediaStream, { mimeType: 'video/webm' });
+                mediaRecorder.ondataavailable = event => { if (event.data.size > 0) recordedChunks.push(event.data); };
+                mediaRecorder.onstop = () => {
+                    const blob = new Blob(recordedChunks, { type: 'video/webm' });
+                    const url = URL.createObjectURL(blob);
+                    const now = new Date();
+                    const fileName = `GeoSnap_Video_${now.toISOString().replace(/[:.]/g, '-')}.webm`;
+                    capturedMediaArray.unshift({ name: fileName, data: url, isVideo: true });
+                };
+                mediaRecorder.start();
+            } catch (e) {
+                alert("Video recording setup failed: " + e.message);
+            }
+        }
+
+        function stopRecording() {
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                mediaRecorder.stop();
+            }
+        }
+
+        function captureMedia() {
+            if (isVideoRecording) {
+                toggleVideoMode();
+                return;
+            }
+
+            const canvas = document.getElementById('watermark-canvas');
+            canvas.width = videoElement.videoWidth || 1280;
+            canvas.height = videoElement.videoHeight || 720;
+            const ctx = canvas.getContext('2d');
+
+            ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+
+            const sector = document.getElementById('sector-select').value;
+            const code = document.getElementById('project-code').value;
+            const zone = document.getElementById('zone-input').value;
+            const manager = document.getElementById('manager-input').value;
+            const submanager = document.getElementById('submanager-input').value;
+            const manpower = document.getElementById('manpower-input').value;
+            const activities = document.getElementById('activities-input').value;
+            const status = document.getElementById('status-select').value;
+            const duration = document.getElementById('duration-input').value;
+            const expdate = document.getElementById('expdate-input').value;
+            const now = new Date();
+            const timeStr = now.toLocaleString();
+            const fileName = `${code}_${now.toISOString().replace(/[:.]/g, '-')}.jpg`;
+
+            let lines = [];
+            if (document.getElementById('opt-sector').checked || document.getElementById('opt-project').checked) {
+                let header = "GEOSNAP";
+                if (document.getElementById('opt-sector').checked) header += ` [${sector.toUpperCase()}]`;
+                if (document.getElementById('opt-project').checked) header += ` - ${code}`;
+                lines.push(header);
+            }
+            if (document.getElementById('opt-timestamp').checked) lines.push(`⏱️ Time: ${timeStr}`);
+            if (document.getElementById('opt-location').checked) lines.push(`📍 Zone: ${zone} (GPS Active)`);
+            if (document.getElementById('opt-incharge').checked) lines.push(`👤 In Charge: ${manager}`);
+            if (document.getElementById('opt-subincharge').checked) lines.push(`👥 Sub In-Charge: ${submanager}`);
+            if (document.getElementById('opt-manpower').checked) lines.push(`👷 Manpower: ${manpower}`);
+            if (document.getElementById('opt-activities').checked) lines.push(`📝 Activities: ${activities}`);
+            if (document.getElementById('opt-status').checked) lines.push(`📊 Status: ${status}`);
+            if (document.getElementById('opt-duration').checked) lines.push(`⏳ Duration: ${duration}`);
+            if (document.getElementById('opt-expdate').checked) lines.push(`📅 Expected Completion: ${expdate}`);
+
+            if (lines.length > 0) {
+                const boxHeight = 30 + (lines.length * 22);
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.55)';
+                ctx.fillRect(20, canvas.height - boxHeight - 20, canvas.width - 40, boxHeight);
+
+                ctx.fillStyle = '#ffffff';
+                let startY = canvas.height - boxHeight + 5;
+                
+                lines.forEach((line, index) => {
+                    ctx.font = index === 0 ? 'bold 20px sans-serif' : '15px sans-serif';
+                    ctx.fillText(line, 35, startY + (index * 22));
+                });
+            }
+
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
+            capturedMediaArray.unshift({ name: fileName, data: dataUrl, isVideo: false });
+
+            const link = document.createElement('a');
+            link.download = fileName;
+            link.href = dataUrl;
+            link.click();
+        }
+
+        function openPreviewGallery() {
+            const container = document.getElementById('gallery-container');
+            container.innerHTML = '';
+            if (capturedMediaArray.length === 0) {
+                container.innerHTML = '<p style="grid-column: span 2; text-align:center; color:#888;">No media captured yet.</p>';
+            } else {
+                capturedMediaArray.forEach((item, index) => {
+                    const div = document.createElement('div');
+                    div.className = 'gallery-item';
+                    if (item.isVideo) {
+                        div.innerHTML = `<video src="${item.data}" controls style="width:100%; height:130px; object-fit:cover;"></video>`;
+                    } else {
+                        div.innerHTML = `<img src="${item.data}">`;
+                    }
+                    div.innerHTML += `
+                        <div style="padding: 6px; font-size: 11px; color: #555; word-break: break-all;">${item.name}</div>
+                        <div class="gallery-actions">
+                            <button onclick="alert('Ready to share!')">Share</button>
+                            <button onclick="capturedMediaArray.splice(${index},1); openPreviewGallery();" style="color:#ff4444;">Delete</button>
+                        </div>
+                    `;
+                    container.appendChild(div);
+                });
+            }
+            document.getElementById('preview-modal').classList.add('active');
+            document.getElementById('side-menu').classList.remove('open');
+        }
+
+        function closePreviewGallery() {
+            document.getElementById('preview-modal').classList.remove('active');
+        }
+    </script>
+</body>
+</html>
