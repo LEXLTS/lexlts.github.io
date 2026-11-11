@@ -10,15 +10,15 @@
         * { box-sizing: border-box; }
         body, html {
             margin: 0; padding: 0; width: 100%; height: 100%;
-            overflow: hidden; background-color: #f8f9fa;
+            overflow: hidden; background-color: #000;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             color: #222;
         }
         #app-wrapper { width: 100%; height: 100%; display: flex; flex-direction: column; position: relative; }
 
-        /* Camera Feed Area & Aspect Ratio Frame */
+        /* Camera Feed & Aspect Ratio Frame */
         #camera-feed-container {
-            flex: 1; position: relative; background-color: #111;
+            flex: 1; position: relative; background-color: #000;
             display: flex; justify-content: center; align-items: center; overflow: hidden;
         }
         
@@ -31,111 +31,149 @@
         #webcam-video { width: 100%; height: 100%; object-fit: cover; }
         #watermark-canvas { display: none; }
 
+        /* Live Overlay HUD for Running Date/Time & Location */
+        #live-hud-overlay {
+            position: absolute; bottom: 15px; left: 15px; z-index: 20;
+            color: #ffffff; font-size: 14px; font-weight: 600;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.9), 0 0 5px rgba(0,0,0,0.7);
+            pointer-events: none; display: flex; flex-direction: column; gap: 4px;
+        }
+
         /* Zoom Slider (Vertical - Right) */
         .zoom-slider-container {
             position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
-            background: rgba(255, 255, 255, 0.9); padding: 12px 6px; border-radius: 20px;
-            display: flex; flex-direction: column; align-items: center; gap: 10px; z-index: 25;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15); color: #ff7700; font-weight: bold;
+            background: rgba(255, 255, 255, 0.9); padding: 10px 6px; border-radius: 20px;
+            display: flex; flex-direction: column; align-items: center; gap: 8px; z-index: 25;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2); color: #ff7700; font-weight: bold;
         }
         .zoom-slider-container input[type=range] {
-            writing-mode: vertical-lr; direction: rtl; height: 120px; accent-color: #ff7700; cursor: pointer;
+            writing-mode: vertical-lr; direction: rtl; height: 110px; accent-color: #ff7700; cursor: pointer;
         }
 
         /* Brightness Slider (Horizontal - Bottom) */
         .brightness-container {
-            position: absolute; bottom: 15px; left: 50%; transform: translateX(-50%);
-            background: rgba(255, 255, 255, 0.9); padding: 6px 15px; border-radius: 20px;
-            display: flex; align-items: center; gap: 10px; z-index: 25; width: 200px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15); color: #ff7700; font-weight: bold;
+            position: absolute; bottom: 70px; left: 50%; transform: translateX(-50%);
+            background: rgba(255, 255, 255, 0.9); padding: 6px 14px; border-radius: 20px;
+            display: flex; align-items: center; gap: 8px; z-index: 25; width: 190px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2); color: #ff7700; font-weight: bold;
         }
         .brightness-container input[type=range] { width: 100%; accent-color: #ff7700; cursor: pointer; }
 
-        /* Top Bar - Clean White Theme with Aspect Ratio Select */
+        /* Top Bar - Clean White Icon Buttons */
         #top-controls {
-            position: absolute; top: 0; left: 0; width: 100%; height: 60px;
+            position: absolute; top: 0; left: 0; width: 100%; height: 55px;
             display: flex; justify-content: space-between; align-items: center; padding: 0 12px;
-            z-index: 30; background: rgba(255, 255, 255, 0.92); backdrop-filter: blur(8px);
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08); gap: 5px;
+            z-index: 30; background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(8px);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08); gap: 8px;
         }
-        .top-btn, #menu-dots {
+        .icon-top-btn {
             background: #fff3eb; border: 1px solid #ffccaa; color: #ff5500;
-            padding: 6px 10px; border-radius: 16px; font-size: 11px; font-weight: 600; cursor: pointer;
-            text-align: center; white-space: nowrap;
+            width: 40px; height: 40px; border-radius: 50%; display: flex;
+            justify-content: center; align-items: center; cursor: pointer; flex-shrink: 0;
         }
-        #menu-dots {
-            display: flex; flex-direction: column; gap: 3px; justify-content: center; align-items: center;
-            width: 36px; height: 36px; padding: 0; border-radius: 50%; flex-shrink: 0;
+        .icon-top-btn svg { width: 20px; height: 20px; fill: #ff5500; }
+        
+        select.aspect-select-btn {
+            background: #fff3eb; border: 1px solid #ffccaa; color: #ff5500;
+            padding: 6px 10px; border-radius: 16px; font-size: 12px; font-weight: bold; cursor: pointer;
         }
-        #menu-dots span { width: 4px; height: 4px; background-color: #ff5500; border-radius: 50%; }
 
-        /* Side Settings Menu */
+        /* Side Settings Menu with Accordion Feature Controls */
         #side-menu {
-            position: absolute; top: 60px; right: 0; width: 300px;
-            height: calc(100% - 60px - 95px); background-color: #ffffff;
-            border-left: 1px solid #e0e0e0; padding: 18px;
+            position: absolute; top: 55px; right: 0; width: 310px;
+            height: calc(100% - 55px - 85px - 50px); background-color: #ffffff;
+            border-left: 1px solid #e0e0e0; padding: 15px;
             z-index: 40; transform: translateX(100%); transition: transform 0.3s ease-in-out;
             overflow-y: auto; font-size: 13px; color: #333; box-shadow: -5px 0 20px rgba(0,0,0,0.1);
         }
         #side-menu.open { transform: translateX(0); }
-        #side-menu h4 { color: #ff7700; margin: 15px 0 8px 0; border-bottom: 2px solid #ffe5d4; padding-bottom: 4px; font-size: 14px; }
-        #side-menu label { display: block; margin: 8px 0 3px; color: #666; font-weight: 500; }
-        #side-menu input, #side-menu select, #side-menu textarea {
-            width: 100%; padding: 8px; background: #fafafa; border: 1px solid #ddd; color: #222; border-radius: 6px; font-size: 13px;
+        #side-menu h4 { color: #ff7700; margin: 10px 0 10px 0; border-bottom: 2px solid #ffe5d4; padding-bottom: 4px; font-size: 14px; }
+        
+        .feature-item { border-bottom: 1px solid #eee; padding: 8px 0; }
+        .feature-header { display: flex; justify-content: space-between; align-items: center; font-weight: 600; color: #444; }
+        .toggle-switch { position: relative; width: 38px; height: 20px; }
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+        .slider {
+            position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #ccc; transition: .3s; border-radius: 20px;
         }
-        .checkbox-group { display: flex; align-items: center; gap: 10px; margin: 8px 0; font-size: 13px; color: #444; cursor: pointer; }
-        .checkbox-group input { width: 18px; height: 18px; accent-color: #ff7700; cursor: pointer; }
+        .slider:before {
+            position: absolute; content: ""; height: 14px; width: 14px; left: 3px; bottom: 3px;
+            background-color: white; transition: .3s; border-radius: 50%;
+        }
+        input:checked + .slider { background-color: #ff7700; }
+        input:checked + .slider:before { transform: translateX(18px); }
+        
+        .feature-input-panel { display: none; margin-top: 8px; }
+        .feature-input-panel.active { display: block; }
+        .feature-input-panel input, .feature-input-panel select, .feature-input-panel textarea {
+            width: 100%; padding: 6px 8px; background: #fafafa; border: 1px solid #ddd; color: #222; border-radius: 6px; font-size: 12px;
+        }
 
-        /* Bottom Controls */
+        /* Bottom Controls - 5 Pure Icon Buttons */
         #bottom-control-bar {
-            height: 95px; background-color: #ffffff; display: flex;
-            justify-content: space-around; align-items: center; z-index: 10; flex-shrink: 0; padding: 0 15px;
-            border-top: 1px solid #eaeaea;
+            height: 85px; background-color: #ffffff; display: flex;
+            justify-content: space-around; align-items: center; z-index: 10; flex-shrink: 0; padding: 0 10px;
+            border-top: 1px solid #eaeaea; gap: 4px;
         }
         .bottom-icon-btn {
-            background: #fff3eb; border: 1px solid #ffd8c2; color: #ff5500;
-            padding: 10px 14px; border-radius: 12px; font-size: 12px; font-weight: bold; cursor: pointer; text-align: center;
+            background: #fff3eb; border: 1px solid #ffd8c2; width: 48px; height: 48px;
+            border-radius: 50%; display: flex; justify-content: center; align-items: center;
+            cursor: pointer; transition: all 0.2s ease;
         }
-        .bottom-icon-btn.active { background: #ff7700; color: #fff; border-color: #ff7700; }
-        
-        .capture-btn {
-            width: 70px; height: 70px; border-radius: 50%; background: linear-gradient(135deg, #ff9900, #ff5500);
-            border: 4px solid #fff; cursor: pointer; box-shadow: 0 4px 15px rgba(255, 119, 0, 0.4);
-            display: flex; justify-content: center; align-items: center;
-        }
-        .capture-btn-inner { width: 54px; height: 54px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.8); }
+        .bottom-icon-btn svg { width: 22px; height: 22px; fill: #ff5500; }
+        .bottom-icon-btn.active { background: #ff7700; border-color: #ff7700; }
+        .bottom-icon-btn.active svg { fill: #ffffff; }
 
-        /* Preview Modal */
+        /* Narrow Main Shutter Controls */
+        .capture-btn {
+            width: 66px; height: 66px; border-radius: 50%; background: linear-gradient(135deg, #ff9900, #ff5500);
+            border: 3px solid #fff; cursor: pointer; box-shadow: 0 4px 12px rgba(255, 119, 0, 0.4);
+            display: flex; justify-content: center; align-items: center; flex-shrink: 0;
+        }
+        .capture-btn-inner { width: 50px; height: 50px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.8); }
+
+        /* AdSense Banner Container */
+        #adsense-container {
+            height: 50px; background-color: #f1f1f1; display: flex;
+            justify-content: center; align-items: center; font-size: 11px; color: #888;
+            border-top: 1px solid #ddd; z-index: 10; flex-shrink: 0;
+        }
+
+        /* Gallery Modal */
         #preview-modal {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background-color: #ffffff; z-index: 150; display: none; flex-direction: column; padding: 20px;
+            background-color: #ffffff; z-index: 150; display: none; flex-direction: column; padding: 15px;
         }
         #preview-modal.active { display: flex; }
-        .gallery-grid { flex: 1; display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; overflow-y: auto; padding-top: 15px; }
-        .gallery-item { background: #fafafa; border-radius: 10px; overflow: hidden; display: flex; flex-direction: column; border: 1px solid #eee; }
-        .gallery-item img, .gallery-item video { width: 100%; height: 130px; object-fit: cover; }
-        .gallery-actions { display: flex; justify-content: space-around; padding: 8px; background: #fff; border-top: 1px solid #eee; }
-        .gallery-actions button { background: none; border: none; color: #ff7700; font-size: 12px; font-weight: bold; cursor: pointer; }
+        .gallery-grid { flex: 1; display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; overflow-y: auto; padding-top: 12px; }
+        .gallery-item { background: #fafafa; border-radius: 8px; overflow: hidden; display: flex; flex-direction: column; border: 1px solid #eee; }
+        .gallery-item img, .gallery-item video { width: 100%; height: 120px; object-fit: cover; }
+        .gallery-actions { display: flex; justify-content: space-around; padding: 6px; background: #fff; border-top: 1px solid #eee; }
+        .gallery-actions button { background: none; border: none; color: #ff7700; font-size: 11px; font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
 
     <div id="app-wrapper">
 
-        <!-- Top Controls: Flash, Preview, Aspect Ratio, 3-Dot Menu -->
+        <!-- Top Controls: Pure Icons & Aspect Selector -->
         <div id="top-controls">
-            <button class="top-btn" id="flash-btn" onclick="toggleFlash()">⚡ Flash</button>
-            <button class="top-btn" onclick="openPreviewGallery()">📁 Preview</button>
-            <select class="top-btn" id="aspect-select" onchange="changeAspectRatio(this.value)">
+            <button class="icon-top-btn" id="flash-btn" onclick="toggleFlash()" title="Flash">
+                <svg viewBox="0 0 24 24"><path d="M7 2v11h3v9l7-12h-4l4-8z"/></svg>
+            </button>
+            
+            <select class="aspect-select-btn" id="aspect-select" onchange="changeAspectRatio(this.value)">
                 <option value="full">Full Screen</option>
                 <option value="9:16">9:16</option>
                 <option value="16:9">16:9</option>
                 <option value="4:3">4:3</option>
                 <option value="1:1">1:1</option>
             </select>
-            <div id="menu-dots" onclick="toggleMenu()">
-                <span></span><span></span><span></span>
-            </div>
+
+            <button class="icon-top-btn" onclick="toggleMenu()" title="Settings">
+                <svg viewBox="0 0 24 24"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
+            </button>
         </div>
 
         <!-- Camera Feed & Interactive Sliders -->
@@ -144,6 +182,12 @@
                 <video id="webcam-video" autoplay playsinline muted></video>
             </div>
             <canvas id="watermark-canvas"></canvas>
+
+            <!-- Running Live Time & Location Overlay -->
+            <div id="live-hud-overlay">
+                <div id="hud-datetime">⏱️ --/--/----, --:--:--</div>
+                <div id="hud-location">📍 GPS: Off / Unavailable</div>
+            </div>
 
             <!-- Vertical Zoom Slider -->
             <div class="zoom-slider-container">
@@ -159,60 +203,117 @@
             </div>
         </div>
 
-        <!-- 3-Dot Settings Menu -->
+        <!-- 3-Dot Drawer with Accordion Feature Controls -->
         <div id="side-menu">
-            <h4>Watermark Options</h4>
-            <label class="checkbox-group"><input type="checkbox" id="opt-location" checked> Include Real GPS Location</label>
-            <label class="checkbox-group"><input type="checkbox" id="opt-timestamp" checked> Include Timestamp</label>
-            <label class="checkbox-group"><input type="checkbox" id="opt-sector" checked> Include Sector</label>
-            <label class="checkbox-group"><input type="checkbox" id="opt-project" checked> Include Project Code</label>
-            <label class="checkbox-group"><input type="checkbox" id="opt-incharge" checked> Include In-Charge</label>
-            <label class="checkbox-group"><input type="checkbox" id="opt-zone" checked> Include Zone / Building</label>
-            <label class="checkbox-group"><input type="checkbox" id="opt-manpower" checked> Include Manpower</label>
-            <label class="checkbox-group"><input type="checkbox" id="opt-activities" checked> Include Activities</label>
-            <label class="checkbox-group"><input type="checkbox" id="opt-status" checked> Include Status</label>
-            <label class="checkbox-group"><input type="checkbox" id="opt-duration" checked> Include Period of Duration</label>
-            <label class="checkbox-group"><input type="checkbox" id="opt-expdate" checked> Include Expected Completion Date</label>
-            <label class="checkbox-group"><input type="checkbox" id="opt-subincharge" checked> Include Sub In-Charge</label>
-
-            <h4>Data Configuration</h4>
-            <label>Sector:</label>
-            <select id="sector-select">
-                <option value="Construction">Construction Field</option>
-                <option value="IT">IT Field</option>
-                <option value="Cleaning">Cleaning Field</option>
-                <option value="Food">Food Field</option>
-            </select>
-
-            <label>Project Code:</label>
-            <input type="text" id="project-code" value="GS-2026-001">
+            <h4>Feature Customizations</h4>
             
-            <label>Zone / Building Name:</label>
-            <input type="text" id="zone-input" value="Zone A, Building 2">
+            <div class="feature-item">
+                <div class="feature-header">
+                    <span>Sector</span>
+                    <label class="toggle-switch"><input type="checkbox" id="toggle-sector" onchange="toggleFeaturePanel('sector')"><span class="slider"></span></label>
+                </div>
+                <div class="feature-input-panel" id="panel-sector">
+                    <select id="input-sector">
+                        <option value="Construction">Construction Field</option>
+                        <option value="IT">IT Field</option>
+                        <option value="Cleaning">Cleaning Field</option>
+                        <option value="Food">Food Field</option>
+                    </select>
+                </div>
+            </div>
 
-            <label>Site In Charge:</label>
-            <input type="text" id="manager-input" value="John Doe">
+            <div class="feature-item">
+                <div class="feature-header">
+                    <span>Project Code</span>
+                    <label class="toggle-switch"><input type="checkbox" id="toggle-project" onchange="toggleFeaturePanel('project')"><span class="slider"></span></label>
+                </div>
+                <div class="feature-input-panel" id="panel-project">
+                    <input type="text" id="input-project" value="GS-2026-001">
+                </div>
+            </div>
 
-            <label>Sub In Charge:</label>
-            <input type="text" id="submanager-input" value="Jane Smith">
+            <div class="feature-item">
+                <div class="feature-header">
+                    <span>Zone / Building</span>
+                    <label class="toggle-switch"><input type="checkbox" id="toggle-zone" onchange="toggleFeaturePanel('zone')"><span class="slider"></span></label>
+                </div>
+                <div class="feature-input-panel" id="panel-zone">
+                    <input type="text" id="input-zone" value="Zone A, Building 2">
+                </div>
+            </div>
 
-            <label>Manpower Count:</label>
-            <input type="text" id="manpower-input" value="12 Workers">
+            <div class="feature-item">
+                <div class="feature-header">
+                    <span>Site In-Charge</span>
+                    <label class="toggle-switch"><input type="checkbox" id="toggle-incharge" onchange="toggleFeaturePanel('incharge')"><span class="slider"></span></label>
+                </div>
+                <div class="feature-input-panel" id="panel-incharge">
+                    <input type="text" id="input-incharge" value="John Doe">
+                </div>
+            </div>
 
-            <label>Activities:</label>
-            <textarea id="activities-input">General Site Work</textarea>
+            <div class="feature-item">
+                <div class="feature-header">
+                    <span>Sub In-Charge</span>
+                    <label class="toggle-switch"><input type="checkbox" id="toggle-subincharge" onchange="toggleFeaturePanel('subincharge')"><span class="slider"></span></label>
+                </div>
+                <div class="feature-input-panel" id="panel-subincharge">
+                    <input type="text" id="input-subincharge" value="Jane Smith">
+                </div>
+            </div>
 
-            <label>Status:</label>
-            <select id="status-select">
-                <option value="Incompleted">Incompleted</option>
-                <option value="Completed">Completed</option>
-            </select>
+            <div class="feature-item">
+                <div class="feature-header">
+                    <span>Manpower Count</span>
+                    <label class="toggle-switch"><input type="checkbox" id="toggle-manpower" onchange="toggleFeaturePanel('manpower')"><span class="slider"></span></label>
+                </div>
+                <div class="feature-input-panel" id="panel-manpower">
+                    <input type="text" id="input-manpower" value="12 Workers">
+                </div>
+            </div>
 
-            <label>Period of Duration:</label>
-            <input type="text" id="duration-input" value="3 Months">
+            <div class="feature-item">
+                <div class="feature-header">
+                    <span>Activities</span>
+                    <label class="toggle-switch"><input type="checkbox" id="toggle-activities" onchange="toggleFeaturePanel('activities')"><span class="slider"></span></label>
+                </div>
+                <div class="feature-input-panel" id="panel-activities">
+                    <textarea id="input-activities" rows="2">General Site Work</textarea>
+                </div>
+            </div>
 
-            <label>Expected Completion Date:</label>
-            <input type="text" id="expdate-input" value="31/12/2026">
+            <div class="feature-item">
+                <div class="feature-header">
+                    <span>Status</span>
+                    <label class="toggle-switch"><input type="checkbox" id="toggle-status" onchange="toggleFeaturePanel('status')"><span class="slider"></span></label>
+                </div>
+                <div class="feature-input-panel" id="panel-status">
+                    <select id="input-status">
+                        <option value="Incompleted">Incompleted</option>
+                        <option value="Completed">Completed</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="feature-item">
+                <div class="feature-header">
+                    <span>Period of Duration</span>
+                    <label class="toggle-switch"><input type="checkbox" id="toggle-duration" onchange="toggleFeaturePanel('duration')"><span class="slider"></span></label>
+                </div>
+                <div class="feature-input-panel" id="panel-duration">
+                    <input type="text" id="input-duration" value="3 Months">
+                </div>
+            </div>
+
+            <div class="feature-item">
+                <div class="feature-header">
+                    <span>Expected Completion Date</span>
+                    <label class="toggle-switch"><input type="checkbox" id="toggle-expdate" onchange="toggleFeaturePanel('expdate')"><span class="slider"></span></label>
+                </div>
+                <div class="feature-input-panel" id="panel-expdate">
+                    <input type="text" id="input-expdate" value="31/12/2026">
+                </div>
+            </div>
         </div>
 
         <!-- Preview Modal Gallery -->
@@ -224,14 +325,37 @@
             <div class="gallery-grid" id="gallery-container"></div>
         </div>
 
-        <!-- Bottom Control Bar -->
+        <!-- Bottom Navigation Bar: 5 Pure Icon Buttons -->
         <div id="bottom-control-bar">
-            <button class="bottom-icon-btn active" id="loc-toggle-btn" onclick="toggleLocationQuick()">📍 Location</button>
-            <button class="bottom-icon-btn" id="video-toggle-btn" onclick="toggleVideoMode()">📹 Video</button>
+            <!-- 1: Location Toggle -->
+            <button class="bottom-icon-btn" id="btn-loc-toggle" onclick="toggleLocationQuick()" title="GPS Location">
+                <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+            </button>
+
+            <!-- 2: Video Mode Toggle -->
+            <button class="bottom-icon-btn" id="btn-video-toggle" onclick="toggleVideoMode()" title="Video Mode">
+                <svg viewBox="0 0 24 24"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>
+            </button>
+
+            <!-- 3: Camera Shutter (Center) -->
             <div class="capture-btn" id="capture-button" onclick="captureMedia()">
                 <div class="capture-btn-inner"></div>
             </div>
-            <button class="bottom-icon-btn" onclick="switchCamera()">🔄 Switch</button>
+
+            <!-- 4: Gallery Preview -->
+            <button class="bottom-icon-btn" onclick="openPreviewGallery()" title="Gallery">
+                <svg viewBox="0 0 24 24"><path d="M22 16V4c0-1.1-.9-2-2-2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2zm-11-4l2.03 2.71L16 11l4 5H9l2-3zM2 6v14c0 1.1.9 2 2 2h14v-2H4V6H2z"/></svg>
+            </button>
+
+            <!-- 5: Camera Switch -->
+            <button class="bottom-icon-btn" onclick="switchCamera()" title="Switch Camera">
+                <svg viewBox="0 0 24 24"><path d="M9.37 5.51A7.002 7.002 0 0 0 5 12c0 3.87 3.13 7 7 7 3.47 0 6.36-2.53 6.91-5.88l-1.48-.42A5.5 5.5 0 0 1 12 17.5c-3.04 0-5.5-2.46-5.5-5.5 0-1.99 1.06-3.74 2.66-4.72l1.34 1.34V4.5H6.38l2.99 1.01zM14.63 18.49A7.002 7.002 0 0 0 19 12c0-3.87-3.13-7-7-7-3.47 0-6.36 2.53-6.91 5.88l1.48.42A5.5 5.5 0 0 1 12 6.5c3.04 0 5.5 2.46 5.5 5.5 0 1.99-1.06 3.74-2.66 4.72l-1.34-1.34V19.5h4.12l-2.99-1.01z"/></svg>
+            </button>
+        </div>
+
+        <!-- Reserved Google AdSense Container -->
+        <div id="adsense-container">
+            <span>Google AdSense Banner Space</span>
         </div>
 
     </div>
@@ -239,6 +363,9 @@
     <script>
         const videoElement = document.getElementById('webcam-video');
         const aspectWrapper = document.getElementById('aspect-ratio-wrapper');
+        const hudDatetime = document.getElementById('hud-datetime');
+        const hudLocation = document.getElementById('hud-location');
+        
         let capturedMediaArray = [];
         let currentFacingMode = 'environment';
         let mediaStream = null;
@@ -247,10 +374,27 @@
         let mediaRecorder = null;
         let recordedChunks = [];
         let flashState = false;
-        let currentGPSLocation = "Fetching GPS Location...";
+        
+        let isGpsActive = false;
+        let currentGPSLocation = "📍 GPS: Off / Unavailable";
 
-        // Fetch Live GPS
+        // Running Live Timer Update
+        function updateLiveHUD() {
+            const now = new Date();
+            hudDatetime.innerText = `⏱️ ${now.toLocaleString()}`;
+        }
+        setInterval(updateLiveHUD, 1000);
+        updateLiveHUD();
+
         function fetchCurrentGPS() {
+            if (!isGpsActive) {
+                currentGPSLocation = "📍 GPS: Off / Unavailable";
+                hudLocation.innerText = currentGPSLocation;
+                return;
+            }
+
+            hudLocation.innerText = "📍 GPS: Locating...";
+
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition(async (position) => {
                     const lat = position.coords.latitude;
@@ -260,20 +404,28 @@
                         const data = await response.json();
                         if (data && data.display_name) {
                             const parts = data.display_name.split(',');
-                            currentGPSLocation = `${parts[0].trim()}, ${parts[1] ? parts[1].trim() : ''} Singapore`;
+                            currentGPSLocation = `📍 GPS: ${parts[0].trim()}, ${parts[1] ? parts[1].trim() : ''} Singapore`;
                         } else {
-                            currentGPSLocation = `Lat: ${lat.toFixed(4)}, Lon: ${lon.toFixed(4)}`;
+                            currentGPSLocation = `📍 GPS: ${lat.toFixed(4)}, ${lon.toFixed(4)}`;
                         }
                     } catch (e) {
-                        currentGPSLocation = `Lat: ${lat.toFixed(4)}, Lon: ${lon.toFixed(4)}`;
+                        currentGPSLocation = `📍 GPS: ${lat.toFixed(4)}, ${lon.toFixed(4)}`;
                     }
-                }, () => { currentGPSLocation = "GPS Location Unavailable"; }, { enableHighAccuracy: true, timeout: 10000 });
+                    hudLocation.innerText = currentGPSLocation;
+                }, () => {
+                    currentGPSLocation = "📍 GPS: Unavailable";
+                    hudLocation.innerText = currentGPSLocation;
+                }, { enableHighAccuracy: true, timeout: 10000 });
             }
         }
-        fetchCurrentGPS();
-        setInterval(fetchCurrentGPS, 30000);
 
-        // High Quality Camera Initializer
+        function toggleLocationQuick() {
+            isGpsActive = !isGpsActive;
+            const btn = document.getElementById('btn-loc-toggle');
+            btn.classList.toggle('active', isGpsActive);
+            fetchCurrentGPS();
+        }
+
         async function initCamera() {
             try {
                 if (mediaStream) {
@@ -282,8 +434,7 @@
                 mediaStream = await navigator.mediaDevices.getUserMedia({
                     video: {
                         facingMode: { ideal: currentFacingMode },
-                        width: { ideal: 3840 },
-                        height: { ideal: 2160 }
+                        width: { ideal: 3840 }, height: { ideal: 2160 }
                     },
                     audio: true
                 });
@@ -295,13 +446,26 @@
                     videoElement.srcObject = mediaStream;
                     videoTrack = mediaStream.getVideoTracks()[0];
                 } catch (e) {
-                    alert("Camera initialization failed: " + e.message);
+                    alert("Camera error: " + e.message);
                 }
             }
         }
         initCamera();
 
-        // Aspect Ratio Handler
+        function toggleMenu() {
+            document.getElementById('side-menu').classList.toggle('open');
+        }
+
+        function toggleFeaturePanel(featureId) {
+            const toggle = document.getElementById(`toggle-${featureId}`);
+            const panel = document.getElementById(`panel-${featureId}`);
+            if (toggle.checked) {
+                panel.classList.add('active');
+            } else {
+                panel.classList.remove('active');
+            }
+        }
+
         function changeAspectRatio(ratio) {
             aspectWrapper.style.width = "100%";
             aspectWrapper.style.height = "100%";
@@ -317,18 +481,6 @@
             }
         }
 
-        function toggleMenu() {
-            document.getElementById('side-menu').classList.toggle('open');
-        }
-
-        function toggleLocationQuick() {
-            const btn = document.getElementById('loc-toggle-btn');
-            const checkbox = document.getElementById('opt-location');
-            checkbox.checked = !checkbox.checked;
-            btn.classList.toggle('active', checkbox.checked);
-            if (checkbox.checked) fetchCurrentGPS();
-        }
-
         function switchCamera() {
             currentFacingMode = currentFacingMode === 'environment' ? 'user' : 'environment';
             initCamera();
@@ -339,9 +491,8 @@
             try {
                 flashState = !flashState;
                 await videoTrack.applyConstraints({ advanced: [{ torch: flashState }] });
-                document.getElementById('flash-btn').innerText = `⚡ ${flashState ? 'ON' : 'OFF'}`;
             } catch (e) {
-                alert("Flash torch not supported on this device camera.");
+                alert("Flash torch not supported on this camera.");
             }
         }
 
@@ -359,9 +510,8 @@
 
         function toggleVideoMode() {
             isVideoRecording = !isVideoRecording;
-            const btn = document.getElementById('video-toggle-btn');
+            const btn = document.getElementById('btn-video-toggle');
             btn.classList.toggle('active', isVideoRecording);
-            btn.innerText = isVideoRecording ? "🔴 Rec" : "📹 Video";
             if (isVideoRecording) {
                 startRecording();
             } else {
@@ -393,7 +543,6 @@
             }
         }
 
-        // Capture High Quality Photo with Watermark
         function captureMedia() {
             if (isVideoRecording) {
                 toggleVideoMode();
@@ -407,49 +556,57 @@
 
             ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
 
-            const sector = document.getElementById('sector-select').value;
-            const code = document.getElementById('project-code').value;
-            const zone = document.getElementById('zone-input').value;
-            const manager = document.getElementById('manager-input').value;
-            const submanager = document.getElementById('submanager-input').value;
-            const manpower = document.getElementById('manpower-input').value;
-            const activities = document.getElementById('activities-input').value;
-            const status = document.getElementById('status-select').value;
-            const duration = document.getElementById('duration-input').value;
-            const expdate = document.getElementById('expdate-input').value;
             const now = new Date();
             const timeStr = now.toLocaleString();
-            const fileName = `${code}_${now.toISOString().replace(/[:.]/g, '-')}.jpg`;
+            const fileName = `GeoSnap_${now.toISOString().replace(/[:.]/g, '-')}.jpg`;
 
             let lines = [];
-            if (document.getElementById('opt-sector').checked || document.getElementById('opt-project').checked) {
-                let header = "GEOSNAP";
-                if (document.getElementById('opt-sector').checked) header += ` [${sector.toUpperCase()}]`;
-                if (document.getElementById('opt-project').checked) header += ` - ${code}`;
-                lines.push(header);
+            lines.push(`⏱️ ${timeStr}`);
+            lines.push(currentGPSLocation);
+
+            if (document.getElementById('toggle-sector').checked) {
+                lines.push(`Sector: ${document.getElementById('input-sector').value}`);
             }
-            if (document.getElementById('opt-timestamp').checked) lines.push(`⏱️ Time: ${timeStr}`);
-            if (document.getElementById('opt-location').checked) lines.push(`📍 GPS: ${currentGPSLocation}`);
-            if (document.getElementById('opt-zone').checked) lines.push(`🏢 Zone/Building: ${zone}`);
-            if (document.getElementById('opt-incharge').checked) lines.push(`👤 In Charge: ${manager}`);
-            if (document.getElementById('opt-subincharge').checked) lines.push(`👥 Sub In-Charge: ${submanager}`);
-            if (document.getElementById('opt-manpower').checked) lines.push(`👷 Manpower: ${manpower}`);
-            if (document.getElementById('opt-activities').checked) lines.push(`📝 Activities: ${activities}`);
-            if (document.getElementById('opt-status').checked) lines.push(`📊 Status: ${status}`);
-            if (document.getElementById('opt-duration').checked) lines.push(`⏳ Duration: ${duration}`);
-            if (document.getElementById('opt-expdate').checked) lines.push(`📅 Expected Completion: ${expdate}`);
+            if (document.getElementById('toggle-project').checked) {
+                lines.push(`Project Code: ${document.getElementById('input-project').value}`);
+            }
+            if (document.getElementById('toggle-zone').checked) {
+                lines.push(`Zone/Building: ${document.getElementById('input-zone').value}`);
+            }
+            if (document.getElementById('toggle-incharge').checked) {
+                lines.push(`In-Charge: ${document.getElementById('input-incharge').value}`);
+            }
+            if (document.getElementById('toggle-subincharge').checked) {
+                lines.push(`Sub In-Charge: ${document.getElementById('input-subincharge').value}`);
+            }
+            if (document.getElementById('toggle-manpower').checked) {
+                lines.push(`Manpower: ${document.getElementById('input-manpower').value}`);
+            }
+            if (document.getElementById('toggle-activities').checked) {
+                lines.push(`Activities: ${document.getElementById('input-activities').value}`);
+            }
+            if (document.getElementById('toggle-status').checked) {
+                lines.push(`Status: ${document.getElementById('input-status').value}`);
+            }
+            if (document.getElementById('toggle-duration').checked) {
+                lines.push(`Duration: ${document.getElementById('input-duration').value}`);
+            }
+            if (document.getElementById('toggle-expdate').checked) {
+                lines.push(`Expected Completion: ${document.getElementById('input-expdate').value}`);
+            }
 
             if (lines.length > 0) {
-                const boxHeight = 40 + (lines.length * 30);
-                ctx.fillStyle = 'rgba(0, 0, 0, 0.55)';
-                ctx.fillRect(30, canvas.height - boxHeight - 30, canvas.width - 60, boxHeight);
-
+                ctx.shadowColor = "rgba(0, 0, 0, 0.9)";
+                ctx.shadowBlur = 6;
+                ctx.shadowOffsetX = 2;
+                ctx.shadowOffsetY = 2;
                 ctx.fillStyle = '#ffffff';
-                let startY = canvas.height - boxHeight + 10;
-                
+
+                let startY = canvas.height - (lines.length * 34) - 30;
+
                 lines.forEach((line, index) => {
-                    ctx.font = index === 0 ? 'bold 28px sans-serif' : '22px sans-serif';
-                    ctx.fillText(line, 50, startY + (index * 30));
+                    ctx.font = 'bold 24px sans-serif';
+                    ctx.fillText(line, 40, startY + (index * 34));
                 });
             }
 
