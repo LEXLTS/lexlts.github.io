@@ -16,11 +16,18 @@
         }
         #app-wrapper { width: 100%; height: 100%; display: flex; flex-direction: column; position: relative; }
 
-        /* Camera Feed Area */
+        /* Camera Feed Area & Aspect Ratio Frame */
         #camera-feed-container {
-            flex: 1; position: relative; background-color: #e9ecef;
+            flex: 1; position: relative; background-color: #111;
             display: flex; justify-content: center; align-items: center; overflow: hidden;
         }
+        
+        #aspect-ratio-wrapper {
+            width: 100%; height: 100%; position: relative;
+            display: flex; justify-content: center; align-items: center;
+            overflow: hidden; transition: all 0.3s ease;
+        }
+
         #webcam-video { width: 100%; height: 100%; object-fit: cover; }
         #watermark-canvas { display: none; }
 
@@ -35,31 +42,32 @@
             writing-mode: vertical-lr; direction: rtl; height: 120px; accent-color: #ff7700; cursor: pointer;
         }
 
-        /* Brightness Slider (Horizontal - Bottom Overlay) */
+        /* Brightness Slider (Horizontal - Bottom) */
         .brightness-container {
             position: absolute; bottom: 15px; left: 50%; transform: translateX(-50%);
-            background: rgba(255, 255, 255, 0.9); padding: 8px 18px; border-radius: 20px;
-            display: flex; align-items: center; gap: 10px; z-index: 25; width: 220px;
+            background: rgba(255, 255, 255, 0.9); padding: 6px 15px; border-radius: 20px;
+            display: flex; align-items: center; gap: 10px; z-index: 25; width: 200px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.15); color: #ff7700; font-weight: bold;
         }
         .brightness-container input[type=range] { width: 100%; accent-color: #ff7700; cursor: pointer; }
 
-        /* Top Bar - Clean White Theme */
+        /* Top Bar - Clean White Theme with Aspect Ratio Select */
         #top-controls {
             position: absolute; top: 0; left: 0; width: 100%; height: 60px;
-            display: flex; justify-content: space-between; align-items: center; padding: 0 15px;
+            display: flex; justify-content: space-between; align-items: center; padding: 0 12px;
             z-index: 30; background: rgba(255, 255, 255, 0.92); backdrop-filter: blur(8px);
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08); gap: 5px;
         }
-        .top-btn {
+        .top-btn, #menu-dots {
             background: #fff3eb; border: 1px solid #ffccaa; color: #ff5500;
-            padding: 8px 14px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer;
+            padding: 6px 10px; border-radius: 16px; font-size: 11px; font-weight: 600; cursor: pointer;
+            text-align: center; white-space: nowrap;
         }
         #menu-dots {
-            display: flex; flex-direction: column; gap: 4px; justify-content: center; align-items: center;
-            width: 38px; height: 38px; background: #fff3eb; border-radius: 50%; border: 1px solid #ffccaa; cursor: pointer;
+            display: flex; flex-direction: column; gap: 3px; justify-content: center; align-items: center;
+            width: 36px; height: 36px; padding: 0; border-radius: 50%; flex-shrink: 0;
         }
-        #menu-dots span { width: 5px; height: 5px; background-color: #ff5500; border-radius: 50%; }
+        #menu-dots span { width: 4px; height: 4px; background-color: #ff5500; border-radius: 50%; }
 
         /* Side Settings Menu */
         #side-menu {
@@ -78,7 +86,7 @@
         .checkbox-group { display: flex; align-items: center; gap: 10px; margin: 8px 0; font-size: 13px; color: #444; cursor: pointer; }
         .checkbox-group input { width: 18px; height: 18px; accent-color: #ff7700; cursor: pointer; }
 
-        /* Bottom Controls - Light Orange Theme */
+        /* Bottom Controls */
         #bottom-control-bar {
             height: 95px; background-color: #ffffff; display: flex;
             justify-content: space-around; align-items: center; z-index: 10; flex-shrink: 0; padding: 0 15px;
@@ -105,7 +113,7 @@
         #preview-modal.active { display: flex; }
         .gallery-grid { flex: 1; display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; overflow-y: auto; padding-top: 15px; }
         .gallery-item { background: #fafafa; border-radius: 10px; overflow: hidden; display: flex; flex-direction: column; border: 1px solid #eee; }
-        .gallery-item img { width: 100%; height: 130px; object-fit: cover; }
+        .gallery-item img, .gallery-item video { width: 100%; height: 130px; object-fit: cover; }
         .gallery-actions { display: flex; justify-content: space-around; padding: 8px; background: #fff; border-top: 1px solid #eee; }
         .gallery-actions button { background: none; border: none; color: #ff7700; font-size: 12px; font-weight: bold; cursor: pointer; }
     </style>
@@ -114,10 +122,17 @@
 
     <div id="app-wrapper">
 
-        <!-- Top Controls: White & Light Orange -->
+        <!-- Top Controls: Flash, Preview, Aspect Ratio, 3-Dot Menu -->
         <div id="top-controls">
-            <button class="top-btn" id="flash-btn" onclick="toggleFlash()">⚡ Flash: OFF</button>
+            <button class="top-btn" id="flash-btn" onclick="toggleFlash()">⚡ Flash</button>
             <button class="top-btn" onclick="openPreviewGallery()">📁 Preview</button>
+            <select class="top-btn" id="aspect-select" onchange="changeAspectRatio(this.value)">
+                <option value="full">Full Screen</option>
+                <option value="9:16">9:16</option>
+                <option value="16:9">16:9</option>
+                <option value="4:3">4:3</option>
+                <option value="1:1">1:1</option>
+            </select>
             <div id="menu-dots" onclick="toggleMenu()">
                 <span></span><span></span><span></span>
             </div>
@@ -125,7 +140,9 @@
 
         <!-- Camera Feed & Interactive Sliders -->
         <div id="camera-feed-container">
-            <video id="webcam-video" autoplay playsinline muted></video>
+            <div id="aspect-ratio-wrapper">
+                <video id="webcam-video" autoplay playsinline muted></video>
+            </div>
             <canvas id="watermark-canvas"></canvas>
 
             <!-- Vertical Zoom Slider -->
@@ -145,12 +162,12 @@
         <!-- 3-Dot Settings Menu -->
         <div id="side-menu">
             <h4>Watermark Options</h4>
-            <label class="checkbox-group"><input type="checkbox" id="opt-location" checked> Include GPS Location</label>
+            <label class="checkbox-group"><input type="checkbox" id="opt-location" checked> Include Real GPS Location</label>
             <label class="checkbox-group"><input type="checkbox" id="opt-timestamp" checked> Include Timestamp</label>
             <label class="checkbox-group"><input type="checkbox" id="opt-sector" checked> Include Sector</label>
             <label class="checkbox-group"><input type="checkbox" id="opt-project" checked> Include Project Code</label>
             <label class="checkbox-group"><input type="checkbox" id="opt-incharge" checked> Include In-Charge</label>
-            <label class="checkbox-group"><input type="checkbox" id="opt-zone" checked> Include Zone</label>
+            <label class="checkbox-group"><input type="checkbox" id="opt-zone" checked> Include Zone / Building</label>
             <label class="checkbox-group"><input type="checkbox" id="opt-manpower" checked> Include Manpower</label>
             <label class="checkbox-group"><input type="checkbox" id="opt-activities" checked> Include Activities</label>
             <label class="checkbox-group"><input type="checkbox" id="opt-status" checked> Include Status</label>
@@ -170,8 +187,8 @@
             <label>Project Code:</label>
             <input type="text" id="project-code" value="GS-2026-001">
             
-            <label>Zone / Location Name:</label>
-            <input type="text" id="zone-input" value="Site Alpha (Sg)">
+            <label>Zone / Building Name:</label>
+            <input type="text" id="zone-input" value="Zone A, Building 2">
 
             <label>Site In Charge:</label>
             <input type="text" id="manager-input" value="John Doe">
@@ -207,7 +224,7 @@
             <div class="gallery-grid" id="gallery-container"></div>
         </div>
 
-        <!-- Bottom Control Bar (Light Orange Main Button) -->
+        <!-- Bottom Control Bar -->
         <div id="bottom-control-bar">
             <button class="bottom-icon-btn active" id="loc-toggle-btn" onclick="toggleLocationQuick()">📍 Location</button>
             <button class="bottom-icon-btn" id="video-toggle-btn" onclick="toggleVideoMode()">📹 Video</button>
@@ -221,6 +238,7 @@
 
     <script>
         const videoElement = document.getElementById('webcam-video');
+        const aspectWrapper = document.getElementById('aspect-ratio-wrapper');
         let capturedMediaArray = [];
         let currentFacingMode = 'environment';
         let mediaStream = null;
@@ -229,24 +247,51 @@
         let mediaRecorder = null;
         let recordedChunks = [];
         let flashState = false;
+        let currentGPSLocation = "Fetching GPS Location...";
 
-        // Reliable Camera Initializer
+        // Fetch Live GPS
+        function fetchCurrentGPS() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(async (position) => {
+                    const lat = position.coords.latitude;
+                    const lon = position.coords.longitude;
+                    try {
+                        const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`);
+                        const data = await response.json();
+                        if (data && data.display_name) {
+                            const parts = data.display_name.split(',');
+                            currentGPSLocation = `${parts[0].trim()}, ${parts[1] ? parts[1].trim() : ''} Singapore`;
+                        } else {
+                            currentGPSLocation = `Lat: ${lat.toFixed(4)}, Lon: ${lon.toFixed(4)}`;
+                        }
+                    } catch (e) {
+                        currentGPSLocation = `Lat: ${lat.toFixed(4)}, Lon: ${lon.toFixed(4)}`;
+                    }
+                }, () => { currentGPSLocation = "GPS Location Unavailable"; }, { enableHighAccuracy: true, timeout: 10000 });
+            }
+        }
+        fetchCurrentGPS();
+        setInterval(fetchCurrentGPS, 30000);
+
+        // High Quality Camera Initializer
         async function initCamera() {
             try {
                 if (mediaStream) {
                     mediaStream.getTracks().forEach(track => track.stop());
                 }
-                // Stream video only to avoid permission locks
                 mediaStream = await navigator.mediaDevices.getUserMedia({
-                    video: { facingMode: { ideal: currentFacingMode } },
-                    audio: false
+                    video: {
+                        facingMode: { ideal: currentFacingMode },
+                        width: { ideal: 3840 },
+                        height: { ideal: 2160 }
+                    },
+                    audio: true
                 });
                 videoElement.srcObject = mediaStream;
                 videoTrack = mediaStream.getVideoTracks()[0];
             } catch (err) {
-                console.warn("Fallback to basic camera constraints", err);
                 try {
-                    mediaStream = await navigator.mediaDevices.getUserMedia({ video: true });
+                    mediaStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
                     videoElement.srcObject = mediaStream;
                     videoTrack = mediaStream.getVideoTracks()[0];
                 } catch (e) {
@@ -255,6 +300,22 @@
             }
         }
         initCamera();
+
+        // Aspect Ratio Handler
+        function changeAspectRatio(ratio) {
+            aspectWrapper.style.width = "100%";
+            aspectWrapper.style.height = "100%";
+            if (ratio === '9:16') {
+                aspectWrapper.style.width = "56.25%";
+            } else if (ratio === '16:9') {
+                aspectWrapper.style.height = "56.25%";
+            } else if (ratio === '4:3') {
+                aspectWrapper.style.height = "75%";
+            } else if (ratio === '1:1') {
+                aspectWrapper.style.height = "100vh";
+                aspectWrapper.style.width = "100vh";
+            }
+        }
 
         function toggleMenu() {
             document.getElementById('side-menu').classList.toggle('open');
@@ -265,6 +326,7 @@
             const checkbox = document.getElementById('opt-location');
             checkbox.checked = !checkbox.checked;
             btn.classList.toggle('active', checkbox.checked);
+            if (checkbox.checked) fetchCurrentGPS();
         }
 
         function switchCamera() {
@@ -277,7 +339,7 @@
             try {
                 flashState = !flashState;
                 await videoTrack.applyConstraints({ advanced: [{ torch: flashState }] });
-                document.getElementById('flash-btn').innerText = `⚡ Flash: ${flashState ? 'ON' : 'OFF'}`;
+                document.getElementById('flash-btn').innerText = `⚡ ${flashState ? 'ON' : 'OFF'}`;
             } catch (e) {
                 alert("Flash torch not supported on this device camera.");
             }
@@ -299,7 +361,7 @@
             isVideoRecording = !isVideoRecording;
             const btn = document.getElementById('video-toggle-btn');
             btn.classList.toggle('active', isVideoRecording);
-            btn.innerText = isVideoRecording ? "🔴 Recording" : "📹 Video";
+            btn.innerText = isVideoRecording ? "🔴 Rec" : "📹 Video";
             if (isVideoRecording) {
                 startRecording();
             } else {
@@ -310,7 +372,7 @@
         function startRecording() {
             recordedChunks = [];
             try {
-                mediaRecorder = new MediaRecorder(mediaStream, { mimeType: 'video/webm' });
+                mediaRecorder = new MediaRecorder(mediaStream, { mimeType: 'video/webm;codecs=vp9,opus' });
                 mediaRecorder.ondataavailable = event => { if (event.data.size > 0) recordedChunks.push(event.data); };
                 mediaRecorder.onstop = () => {
                     const blob = new Blob(recordedChunks, { type: 'video/webm' });
@@ -331,6 +393,7 @@
             }
         }
 
+        // Capture High Quality Photo with Watermark
         function captureMedia() {
             if (isVideoRecording) {
                 toggleVideoMode();
@@ -338,8 +401,8 @@
             }
 
             const canvas = document.getElementById('watermark-canvas');
-            canvas.width = videoElement.videoWidth || 1280;
-            canvas.height = videoElement.videoHeight || 720;
+            canvas.width = videoElement.videoWidth || 3840;
+            canvas.height = videoElement.videoHeight || 2160;
             const ctx = canvas.getContext('2d');
 
             ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
@@ -366,7 +429,8 @@
                 lines.push(header);
             }
             if (document.getElementById('opt-timestamp').checked) lines.push(`⏱️ Time: ${timeStr}`);
-            if (document.getElementById('opt-location').checked) lines.push(`📍 Zone: ${zone} (GPS Active)`);
+            if (document.getElementById('opt-location').checked) lines.push(`📍 GPS: ${currentGPSLocation}`);
+            if (document.getElementById('opt-zone').checked) lines.push(`🏢 Zone/Building: ${zone}`);
             if (document.getElementById('opt-incharge').checked) lines.push(`👤 In Charge: ${manager}`);
             if (document.getElementById('opt-subincharge').checked) lines.push(`👥 Sub In-Charge: ${submanager}`);
             if (document.getElementById('opt-manpower').checked) lines.push(`👷 Manpower: ${manpower}`);
@@ -376,20 +440,20 @@
             if (document.getElementById('opt-expdate').checked) lines.push(`📅 Expected Completion: ${expdate}`);
 
             if (lines.length > 0) {
-                const boxHeight = 30 + (lines.length * 22);
+                const boxHeight = 40 + (lines.length * 30);
                 ctx.fillStyle = 'rgba(0, 0, 0, 0.55)';
-                ctx.fillRect(20, canvas.height - boxHeight - 20, canvas.width - 40, boxHeight);
+                ctx.fillRect(30, canvas.height - boxHeight - 30, canvas.width - 60, boxHeight);
 
                 ctx.fillStyle = '#ffffff';
-                let startY = canvas.height - boxHeight + 5;
+                let startY = canvas.height - boxHeight + 10;
                 
                 lines.forEach((line, index) => {
-                    ctx.font = index === 0 ? 'bold 20px sans-serif' : '15px sans-serif';
-                    ctx.fillText(line, 35, startY + (index * 22));
+                    ctx.font = index === 0 ? 'bold 28px sans-serif' : '22px sans-serif';
+                    ctx.fillText(line, 50, startY + (index * 30));
                 });
             }
 
-            const dataUrl = canvas.toDataURL('image/jpeg', 0.95);
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.98);
             capturedMediaArray.unshift({ name: fileName, data: dataUrl, isVideo: false });
 
             const link = document.createElement('a');
@@ -408,7 +472,7 @@
                     const div = document.createElement('div');
                     div.className = 'gallery-item';
                     if (item.isVideo) {
-                        div.innerHTML = `<video src="${item.data}" controls style="width:100%; height:130px; object-fit:cover;"></video>`;
+                        div.innerHTML = `<video src="${item.data}" controls></video>`;
                     } else {
                         div.innerHTML = `<img src="${item.data}">`;
                     }
