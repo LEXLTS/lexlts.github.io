@@ -1,8 +1,10 @@
 [{
-      "relation": ["delegate_permission/common.handle_all_urls"],
-      "target": {
-        "namespace": "android_app",
-        "package_name": "io.github.lexlts.twa",
-        "sha256_cert_fingerprints": ["02:BA:E1:AF:41:B1:8E:F0:4D:69:9B:72:B5:2A:BE:7B:61:33:EF:71:C1:FE:C1:93:E3:08:A2:FE:3B:02:84:93"]
-      }
-    }]
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "io.github.lexlts.twa",
+    "sha256_cert_fingerprints": [
+      "YOUR_SHA256_CERTIFICATE_FINGERPRINT_HERE"
+    ]
+  }
+}]
