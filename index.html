@@ -50,7 +50,7 @@
             writing-mode: vertical-lr; direction: rtl; height: 110px; accent-color: #ff7700; cursor: pointer;
         }
 
-        /* Brightness Slider (Horizontal - Bottom) - Fixed Full Range (0% to 200%) */
+        /* Brightness Slider (Horizontal - Bottom) - Full Range (0% to 200%) */
         .brightness-container {
             position: absolute; bottom: 70px; left: 50%; transform: translateX(-50%);
             background: rgba(255, 255, 255, 0.9); padding: 6px 14px; border-radius: 20px;
@@ -224,10 +224,23 @@
             </div>
         </div>
 
-        <!-- 3-Dot Drawer with Accordion Feature Controls & Custom Tags -->
+        <!-- 3-Dot Drawer with Accordion Feature Controls & Video Format Selector -->
         <div id="side-menu">
             <h4>Feature Customizations</h4>
             
+            <!-- Video Format Selector -->
+            <div class="feature-item">
+                <div class="feature-header">
+                    <span>Video Format</span>
+                </div>
+                <div class="feature-input-panel active" style="margin-top:6px;">
+                    <select id="input-video-format">
+                        <option value="mp4">MP4 (.mp4)</option>
+                        <option value="webm">WebM (.webm)</option>
+                    </select>
+                </div>
+            </div>
+
             <div class="feature-item">
                 <div class="feature-header">
                     <span>Sector</span>
@@ -579,7 +592,6 @@
             }
         }
 
-        // Fixed Brightness Control (0% to 200%)
         function adjustBrightness(val) {
             videoElement.style.filter = `brightness(${val}%)`;
         }
@@ -598,21 +610,24 @@
         function startRecording() {
             recordedChunks = [];
             recordingSeconds = 0;
+            const format = document.getElementById('input-video-format').value;
+            const ext = format === 'mp4' ? 'mp4' : 'webm';
+            
             try {
-                let options = { mimeType: 'video/webm;codecs=vp9,opus' };
-                if (!MediaRecorder.isTypeSupported(options.mimeType)) {
-                    options = { mimeType: 'video/webm' };
+                let mimeType = format === 'mp4' ? 'video/mp4' : 'video/webm;codecs=vp9,opus';
+                if (!MediaRecorder.isTypeSupported(mimeType)) {
+                    mimeType = 'video/webm';
                 }
-                mediaRecorder = new MediaRecorder(mediaStream, options);
+
+                mediaRecorder = new MediaRecorder(mediaStream, { mimeType: mimeType });
                 mediaRecorder.ondataavailable = event => { if (event.data.size > 0) recordedChunks.push(event.data); };
                 mediaRecorder.onstop = async () => {
-                    const blob = new Blob(recordedChunks, { type: 'video/webm' });
+                    const blob = new Blob(recordedChunks, { type: mimeType });
                     const url = URL.createObjectURL(blob);
                     const now = new Date();
-                    const fileName = `GeoSnap_Video_${now.toISOString().replace(/[:.]/g, '-')}.webm`;
+                    const fileName = `GeoSnap_Video_${now.toISOString().replace(/[:.]/g, '-')}.${ext}`;
                     capturedMediaArray.unshift({ name: fileName, data: url, isVideo: true, blob: blob });
                     
-                    // Save directly into mobile device gallery/downloads
                     await saveFileToDevice(blob, fileName);
                 };
                 mediaRecorder.start(100);
@@ -641,7 +656,6 @@
             updateLiveHUD();
         }
 
-        // Helper function to save file directly to mobile device gallery storage
         async function saveFileToDevice(blobOrUrl, fileName, isDataUrl = false) {
             try {
                 let blob = blobOrUrl;
@@ -650,11 +664,10 @@
                     blob = await res.blob();
                 }
 
-                // Try File System Access API (Triggers device save / gallery dialog prompt)
                 if (window.showSaveFilePicker) {
                     const handle = await window.showSaveFilePicker({
                         suggestedName: fileName,
-                        types: [{ description: 'Media File', accept: { 'image/jpeg': ['.jpg'], 'video/webm': ['.webm'] } }]
+                        types: [{ description: 'Media File', accept: { 'image/jpeg': ['.jpg'], 'video/mp4': ['.mp4'], 'video/webm': ['.webm'] } }]
                     });
                     const writable = await handle.createWritable();
                     await writable.write(blob);
@@ -662,10 +675,9 @@
                     return;
                 }
             } catch (err) {
-                console.log("File System picker cancelled or unavailable, using fallback download.");
+                console.log("File picker cancelled or unavailable, using auto download fallback.");
             }
 
-            // Standard automatic download trigger to dump into device downloads/gallery
             const a = document.createElement('a');
             a.href = typeof blobOrUrl === 'string' ? blobOrUrl : URL.createObjectURL(blobOrUrl);
             a.download = fileName;
@@ -748,7 +760,7 @@
 
                 lines.forEach((line, index) => {
                     ctx.font = 'bold 24px sans-serif';
-                    ctx.fillText(line, 40, startY + (index * 34));
+                    ctx.fillText(line, 40, startY + (index * 34)); // Uniform left margin X = 40 for perfect alignment
                 });
             }
 
@@ -759,7 +771,6 @@
                 navigator.vibrate(60);
             }
 
-            // Save directly into mobile device gallery/storage
             await saveFileToDevice(dataUrl, fileName, true);
         }
 
