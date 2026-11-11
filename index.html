@@ -61,7 +61,7 @@
         }
         .brightness-container input[type=range] { width: 100%; accent-color: #ff7700; cursor: pointer; }
 
-        /* Top Bar - Clean White Icon Buttons */
+        /* Top Bar - Clean White Icon Buttons with Bolder Strokes */
         #top-controls {
             position: absolute; top: 0; left: 0; width: 100%; height: 55px;
             display: flex; justify-content: space-between; align-items: center; padding: 0 12px;
@@ -73,7 +73,7 @@
             width: 40px; height: 40px; border-radius: 50%; display: flex;
             justify-content: center; align-items: center; cursor: pointer; flex-shrink: 0;
         }
-        .icon-top-btn svg { width: 20px; height: 20px; fill: #ff5500; }
+        .icon-top-btn svg { width: 22px; height: 22px; stroke: #ff5500; stroke-width: 2.2px; fill: none; }
         
         select.aspect-select-btn {
             background: #fff3eb; border: 1px solid #ffccaa; color: #ff5500;
@@ -112,7 +112,7 @@
             width: 100%; padding: 6px 8px; background: #fafafa; border: 1px solid #ddd; color: #222; border-radius: 6px; font-size: 12px;
         }
 
-        /* Bottom Controls */
+        /* Bottom Controls - Bolder, Thicker Icons */
         #bottom-control-bar {
             height: 85px; background-color: #ffffff; display: flex;
             justify-content: space-around; align-items: center; z-index: 10; flex-shrink: 0; padding: 0 10px;
@@ -123,9 +123,9 @@
             border-radius: 50%; display: flex; justify-content: center; align-items: center;
             cursor: pointer; transition: all 0.2s ease;
         }
-        .bottom-icon-btn svg { width: 22px; height: 22px; fill: #ff5500; }
+        .bottom-icon-btn svg { width: 25px; height: 25px; stroke: #ff5500; stroke-width: 2.2px; fill: none; }
         .bottom-icon-btn.active { background: #ff7700; border-color: #ff7700; }
-        .bottom-icon-btn.active svg { fill: #ffffff; }
+        .bottom-icon-btn.active svg { stroke: #ffffff; fill: none; }
 
         .capture-btn {
             width: 66px; height: 66px; border-radius: 50%; background: linear-gradient(135deg, #ff9900, #ff5500);
@@ -141,7 +141,7 @@
             border-top: 1px solid #ddd; z-index: 10; flex-shrink: 0;
         }
 
-        /* Preview Gallery Modal */
+        /* Sleek Redesigned Preview Gallery Modal */
         #preview-modal {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background-color: #f8f9fa; z-index: 150; display: none; flex-direction: column; padding: 15px;
@@ -197,10 +197,10 @@
 
     <div id="app-wrapper">
 
-        <!-- Top Controls -->
+        <!-- Top Controls (Bolder Bold Icon Strokes) -->
         <div id="top-controls">
             <button class="icon-top-btn" id="flash-btn" onclick="toggleFlash()" title="Flash">
-                <svg viewBox="0 0 24 24"><path d="M7 2v11h3v9l7-12h-4l4-8z"/></svg>
+                <svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
             </button>
             
             <select class="aspect-select-btn" id="aspect-select" onchange="changeAspectRatio(this.value)">
@@ -212,7 +212,7 @@
             </select>
 
             <button class="icon-top-btn" onclick="toggleMenu(event)" title="Settings">
-                <svg viewBox="0 0 24 24"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
             </button>
         </div>
 
@@ -442,14 +442,14 @@
             </div>
         </div>
 
-        <!-- Bottom Navigation Bar: 5 Pure Icon Buttons -->
+        <!-- Bottom Navigation Bar: 5 Bold Icon Buttons -->
         <div id="bottom-control-bar" onclick="event.stopPropagation()">
             <button class="bottom-icon-btn" id="btn-loc-toggle" onclick="toggleLocationQuick()" title="GPS Location">
-                <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+                <svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
             </button>
 
             <button class="bottom-icon-btn" id="btn-video-toggle" onclick="toggleVideoMode()" title="Video Mode">
-                <svg viewBox="0 0 24 24"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>
+                <svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
             </button>
 
             <div class="capture-btn" id="capture-button" onclick="captureMedia()">
@@ -457,11 +457,11 @@
             </div>
 
             <button class="bottom-icon-btn" onclick="openPreviewGallery()" title="Gallery">
-                <svg viewBox="0 0 24 24"><path d="M22 16V4c0-1.1-.9-2-2-2H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2zm-11-4l2.03 2.71L16 11l4 5H9l2-3zM2 6v14c0 1.1.9 2 2 2h14v-2H4V6H2z"/></svg>
+                <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
             </button>
 
             <button class="bottom-icon-btn" onclick="switchCamera()" title="Switch Camera">
-                <svg viewBox="0 0 24 24"><path d="M9.37 5.51A7.002 7.002 0 0 0 5 12c0 3.87 3.13 7 7 7 3.47 0 6.36-2.53 6.91-5.88l-1.48-.42A5.5 5.5 0 0 1 12 17.5c-3.04 0-5.5-2.46-5.5-5.5 0-1.99 1.06-3.74 2.66-4.72l1.34 1.34V4.5H6.38l2.99 1.01zM14.63 18.49A7.002 7.002 0 0 0 19 12c0-3.87-3.13-7-7-7-3.47 0-6.36 2.53-6.91 5.88l1.48.42A5.5 5.5 0 0 1 12 6.5c3.04 0 5.5 2.46 5.5 5.5 0 1.99-1.06 3.74-2.66 4.72l-1.34-1.34V19.5h4.12l-2.99-1.01z"/></svg>
+                <svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
             </button>
         </div>
 
@@ -493,6 +493,9 @@
         let recordingSeconds = 0;
         let currentEditIndex = -1;
         let editImageObj = new Image();
+
+        let canvasStream = null;
+        let videoCanvasTimer = null;
 
         function refreshLiveHUD() {
             const now = new Date();
@@ -581,7 +584,7 @@
                 mediaStream = await navigator.mediaDevices.getUserMedia({
                     video: {
                         facingMode: { ideal: currentFacingMode },
-                        width: { ideal: 3840 }, height: { ideal: 2160 }
+                        width: { ideal: 1920 }, height: { ideal: 1080 }
                     },
                     audio: true
                 });
@@ -669,6 +672,7 @@
             }
         }
 
+        // Fully Fixed Video Recording Pipeline with Burn-in Watermarks & Real-Time Framerate
         function startRecording() {
             recordedChunks = [];
             recordingSeconds = 0;
@@ -676,6 +680,66 @@
             const ext = format === 'mp4' ? 'mp4' : 'webm';
             
             try {
+                const canvas = document.getElementById('video-canvas');
+                canvas.width = videoElement.videoWidth || 1920;
+                canvas.height = videoElement.videoHeight || 1080;
+                const ctx = canvas.getContext('2d');
+
+                // Draw frames continuously at 30fps for smooth video movement
+                videoCanvasTimer = setInterval(() => {
+                    if (!isVideoRecording) return;
+                    ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+
+                    let lines = [];
+                    lines.push(`${new Date().toLocaleString()}`);
+                    if (isGpsActive && currentGPSLocation && currentGPSLocation !== "GPS: Locating...") {
+                        lines.push(currentGPSLocation);
+                    }
+
+                    const fields = [
+                        {id: 'sector', prefix: 'Sector: '},
+                        {id: 'project', prefix: 'Project Code: '},
+                        {id: 'zone', prefix: 'Zone/Building: '},
+                        {id: 'incharge', prefix: 'In-Charge: '},
+                        {id: 'subincharge', prefix: 'Sub In-Charge: '},
+                        {id: 'manpower', prefix: 'Manpower: '},
+                        {id: 'activities', prefix: 'Activities: '},
+                        {id: 'status', prefix: 'Status: '},
+                        {id: 'duration', prefix: 'Duration: '},
+                        {id: 'expdate', prefix: 'Expected Completion: '},
+                        {id: 'custom1', prefix: ''},
+                        {id: 'custom2', prefix: ''},
+                        {id: 'custom3', prefix: ''}
+                    ];
+
+                    fields.forEach(f => {
+                        if (document.getElementById(`toggle-${f.id}`).checked) {
+                            const val = document.getElementById(`input-${f.id}`).value;
+                            if (val) lines.push(f.prefix + val);
+                        }
+                    });
+
+                    if (lines.length > 0) {
+                        ctx.shadowColor = "rgba(0, 0, 0, 0.9)";
+                        ctx.shadowBlur = 6;
+                        ctx.shadowOffsetX = 2;
+                        ctx.shadowOffsetY = 2;
+                        ctx.fillStyle = '#ffffff';
+
+                        let startY = canvas.height - (lines.length * 36) - 40;
+                        lines.forEach((line, index) => {
+                            ctx.font = 'bold 26px sans-serif';
+                            ctx.fillText(line, 45, startY + (index * 36));
+                        });
+                    }
+                }, 1000 / 30);
+
+                canvasStream = canvas.captureStream(30);
+                const audioTracks = mediaStream.getAudioTracks();
+                if (audioTracks.length > 0) {
+                    canvasStream.addTrack(audioTracks[0]);
+                }
+
                 let options = { mimeType: format === 'mp4' ? 'video/mp4' : 'video/webm;codecs=vp9,opus' };
                 if (!MediaRecorder.isTypeSupported(options.mimeType)) {
                     options = { mimeType: 'video/webm' };
@@ -684,7 +748,7 @@
                     options = {};
                 }
 
-                mediaRecorder = new MediaRecorder(mediaStream, options);
+                mediaRecorder = new MediaRecorder(canvasStream, options);
                 mediaRecorder.ondataavailable = event => {
                     if (event.data && event.data.size > 0) {
                         recordedChunks.push(event.data);
@@ -697,6 +761,7 @@
                     const fileName = `GeoSnap_Video_${now.toISOString().replace(/[:.]/g, '-')}.${ext}`;
                     capturedMediaArray.unshift({ name: fileName, data: url, isVideo: true, blob: blob });
                     
+                    if (videoCanvasTimer) clearInterval(videoCanvasTimer);
                     await saveFileToDevice(blob, fileName);
                 };
                 mediaRecorder.start(250);
@@ -710,6 +775,7 @@
             } catch (e) {
                 alert("Video recording setup failed: " + e.message);
                 isVideoRecording = false;
+                if (videoCanvasTimer) clearInterval(videoCanvasTimer);
                 document.getElementById('btn-video-toggle').classList.remove('active');
             }
         }
@@ -722,10 +788,13 @@
                 clearInterval(recordingTimerInterval);
                 recordingTimerInterval = null;
             }
+            if (videoCanvasTimer) {
+                clearInterval(videoCanvasTimer);
+                videoCanvasTimer = null;
+            }
             refreshLiveHUD();
         }
 
-        // Automatic Download File Storage System (Bypasses Save Picker when Auto Save is On)
         async function saveFileToDevice(blobOrUrl, fileName, isDataUrl = false) {
             const isAutoSave = document.getElementById('toggle-autosave').checked;
             let blob = blobOrUrl;
@@ -750,7 +819,6 @@
                 }
             }
 
-            // Direct silent auto-download pipeline (No file picker modal prompt)
             const a = document.createElement('a');
             a.href = typeof blobOrUrl === 'string' ? blobOrUrl : URL.createObjectURL(blobOrUrl);
             a.download = fileName;
