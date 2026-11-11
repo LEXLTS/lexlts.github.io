@@ -31,7 +31,7 @@
         #webcam-video { width: 100%; height: 100%; object-fit: cover; }
         #watermark-canvas { display: none; }
 
-        /* Live Overlay HUD for Running Date/Time & Location */
+        /* Live Overlay HUD for Running Date/Time, Timer & Location */
         #live-hud-overlay {
             position: absolute; bottom: 15px; left: 15px; z-index: 20;
             color: #ffffff; font-size: 14px; font-weight: 600;
@@ -78,7 +78,7 @@
             padding: 6px 10px; border-radius: 16px; font-size: 12px; font-weight: bold; cursor: pointer;
         }
 
-        /* Side Settings Menu */
+        /* Side Settings Menu with Accordion Feature Controls */
         #side-menu {
             position: absolute; top: 55px; right: 0; width: 310px;
             height: calc(100% - 55px - 85px - 50px); background-color: #ffffff;
@@ -172,14 +172,13 @@
             background: #2a2a2a; border: 1px solid #444; color: #fff;
             padding: 8px 12px; border-radius: 8px; font-size: 11px; cursor: pointer; white-space: nowrap;
         }
-        .editor-tool-btn:hover { background: #ff7700; border-color: #ff7700; }
     </style>
 </head>
 <body>
 
     <div id="app-wrapper">
 
-        <!-- Top Controls: Pure Icons & Aspect Selector -->
+        <!-- Top Controls -->
         <div id="top-controls">
             <button class="icon-top-btn" id="flash-btn" onclick="toggleFlash()" title="Flash">
                 <svg viewBox="0 0 24 24"><path d="M7 2v11h3v9l7-12h-4l4-8z"/></svg>
@@ -205,10 +204,10 @@
             </div>
             <canvas id="watermark-canvas"></canvas>
 
-            <!-- Running Live Time & Location Overlay -->
+            <!-- Running Live Time, Recording Timer & Location Overlay -->
             <div id="live-hud-overlay">
                 <div id="hud-datetime">⏱️ --/--/----, --:--:--</div>
-                <div id="hud-location">📍 GPS: Off / Unavailable</div>
+                <div id="hud-location" style="display: none;"></div>
             </div>
 
             <!-- Vertical Zoom Slider -->
@@ -225,7 +224,7 @@
             </div>
         </div>
 
-        <!-- 3-Dot Drawer with Accordion Feature Controls -->
+        <!-- 3-Dot Drawer with Accordion Feature Controls & Custom Tags -->
         <div id="side-menu">
             <h4>Feature Customizations</h4>
             
@@ -336,6 +335,39 @@
                     <input type="text" id="input-expdate" value="31/12/2026">
                 </div>
             </div>
+
+            <!-- Custom Tag 1 -->
+            <div class="feature-item">
+                <div class="feature-header">
+                    <span>Custom Tag 1</span>
+                    <label class="toggle-switch"><input type="checkbox" id="toggle-custom1" onchange="toggleFeaturePanel('custom1')"><span class="slider"></span></label>
+                </div>
+                <div class="feature-input-panel" id="panel-custom1">
+                    <input type="text" id="input-custom1" value="Custom Value 1">
+                </div>
+            </div>
+
+            <!-- Custom Tag 2 -->
+            <div class="feature-item">
+                <div class="feature-header">
+                    <span>Custom Tag 2</span>
+                    <label class="toggle-switch"><input type="checkbox" id="toggle-custom2" onchange="toggleFeaturePanel('custom2')"><span class="slider"></span></label>
+                </div>
+                <div class="feature-input-panel" id="panel-custom2">
+                    <input type="text" id="input-custom2" value="Custom Value 2">
+                </div>
+            </div>
+
+            <!-- Custom Tag 3 -->
+            <div class="feature-item">
+                <div class="feature-header">
+                    <span>Custom Tag 3</span>
+                    <label class="toggle-switch"><input type="checkbox" id="toggle-custom3" onchange="toggleFeaturePanel('custom3')"><span class="slider"></span></label>
+                </div>
+                <div class="feature-input-panel" id="panel-custom3">
+                    <input type="text" id="input-custom3" value="Custom Value 3">
+                </div>
+            </div>
         </div>
 
         <!-- Preview Modal Gallery -->
@@ -413,26 +445,28 @@
         let flashState = false;
         
         let isGpsActive = false;
-        let currentGPSLocation = "📍 GPS: Off / Unavailable";
+        let currentGPSLocation = "";
+        let recordingTimerInterval = null;
+        let recordingSeconds = 0;
 
-        // Editor state
-        let currentEditIndex = -1;
-        let editImageObj = new Image();
-
+        // Running Live Timer Update
         function updateLiveHUD() {
             const now = new Date();
-            hudDatetime.innerText = `⏱️ ${now.toLocaleString()}`;
+            if (!isVideoRecording) {
+                hudDatetime.innerText = `⏱️ ${now.toLocaleString()}`;
+            }
         }
         setInterval(updateLiveHUD, 1000);
         updateLiveHUD();
 
         function fetchCurrentGPS() {
             if (!isGpsActive) {
-                currentGPSLocation = "📍 GPS: Off / Unavailable";
-                hudLocation.innerText = currentGPSLocation;
+                currentGPSLocation = "";
+                hudLocation.style.display = "none";
                 return;
             }
 
+            hudLocation.style.display = "block";
             hudLocation.innerText = "📍 GPS: Locating...";
 
             if (navigator.geolocation) {
@@ -451,10 +485,10 @@
                     } catch (e) {
                         currentGPSLocation = `📍 GPS: ${lat.toFixed(4)}, ${lon.toFixed(4)}`;
                     }
-                    hudLocation.innerText = currentGPSLocation;
+                    if (isGpsActive) hudLocation.innerText = currentGPSLocation;
                 }, () => {
-                    currentGPSLocation = "📍 GPS: Unavailable";
-                    hudLocation.innerText = currentGPSLocation;
+                    currentGPSLocation = "";
+                    hudLocation.style.display = "none";
                 }, { enableHighAccuracy: true, timeout: 10000 });
             }
         }
@@ -561,8 +595,13 @@
 
         function startRecording() {
             recordedChunks = [];
+            recordingSeconds = 0;
             try {
-                mediaRecorder = new MediaRecorder(mediaStream, { mimeType: 'video/webm;codecs=vp9,opus' });
+                let options = { mimeType: 'video/webm;codecs=vp9,opus' };
+                if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+                    options = { mimeType: 'video/webm' };
+                }
+                mediaRecorder = new MediaRecorder(mediaStream, options);
                 mediaRecorder.ondataavailable = event => { if (event.data.size > 0) recordedChunks.push(event.data); };
                 mediaRecorder.onstop = () => {
                     const blob = new Blob(recordedChunks, { type: 'video/webm' });
@@ -571,9 +610,19 @@
                     const fileName = `GeoSnap_Video_${now.toISOString().replace(/[:.]/g, '-')}.webm`;
                     capturedMediaArray.unshift({ name: fileName, data: url, isVideo: true, blob: blob });
                 };
-                mediaRecorder.start();
+                mediaRecorder.start(100);
+
+                // Start Recording Timer Counter on Display
+                recordingTimerInterval = setInterval(() => {
+                    recordingSeconds++;
+                    const mins = String(Math.floor(recordingSeconds / 60)).padStart(2, '0');
+                    const secs = String(recordingSeconds % 60).padStart(2, '0');
+                    hudDatetime.innerText = `🔴 REC [${mins}:${secs}]`;
+                }, 1000);
             } catch (e) {
                 alert("Video recording setup failed: " + e.message);
+                isVideoRecording = false;
+                document.getElementById('btn-video-toggle').classList.remove('active');
             }
         }
 
@@ -581,6 +630,11 @@
             if (mediaRecorder && mediaRecorder.state !== 'inactive') {
                 mediaRecorder.stop();
             }
+            if (recordingTimerInterval) {
+                clearInterval(recordingTimerInterval);
+                recordingTimerInterval = null;
+            }
+            updateLiveHUD();
         }
 
         function captureMedia() {
@@ -602,7 +656,9 @@
 
             let lines = [];
             lines.push(`⏱️ ${timeStr}`);
-            lines.push(currentGPSLocation);
+            if (isGpsActive && currentGPSLocation) {
+                lines.push(currentGPSLocation);
+            }
 
             if (document.getElementById('toggle-sector').checked) {
                 lines.push(`Sector: ${document.getElementById('input-sector').value}`);
@@ -634,6 +690,15 @@
             if (document.getElementById('toggle-expdate').checked) {
                 lines.push(`Expected Completion: ${document.getElementById('input-expdate').value}`);
             }
+            if (document.getElementById('toggle-custom1').checked) {
+                lines.push(`${document.getElementById('input-custom1').value}`);
+            }
+            if (document.getElementById('toggle-custom2').checked) {
+                lines.push(`${document.getElementById('input-custom2').value}`);
+            }
+            if (document.getElementById('toggle-custom3').checked) {
+                lines.push(`${document.getElementById('input-custom3').value}`);
+            }
 
             if (lines.length > 0) {
                 ctx.shadowColor = "rgba(0, 0, 0, 0.9)";
@@ -658,7 +723,6 @@
             }
         }
 
-        // --- PREVIEW GALLERY & NATIVE SHARE API ---
         function openPreviewGallery() {
             const container = document.getElementById('gallery-container');
             container.innerHTML = '';
@@ -692,7 +756,6 @@
             document.getElementById('preview-modal').classList.remove('active');
         }
 
-        // Native System Share Handler (WhatsApp, Gmail, Messages, Twitter, etc.)
         async function shareMediaItem(index) {
             const item = capturedMediaArray[index];
             try {
@@ -715,18 +778,15 @@
                         return;
                     }
                 }
-                
-                // Fallback direct download if Web Share API files option is restricted
                 const a = document.createElement('a');
                 a.download = item.name;
                 a.href = item.data;
                 a.click();
             } catch (e) {
-                console.log("Sharing cancelled or unavailable:", e);
+                console.log("Sharing cancelled:", e);
             }
         }
 
-        // --- IN-APP IMAGE EDITOR FUNCTIONS ---
         function openImageEditor(index) {
             currentEditIndex = index;
             const item = capturedMediaArray[index];
@@ -816,9 +876,9 @@
             const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
             const data = imageData.data;
             for (let i = 0; i < data.length; i += 4) {
-                data[i] = Math.min(255, data[i] + 20);     // Red
-                data[i+1] = Math.min(255, data[i+1] + 20); // Green
-                data[i+2] = Math.min(255, data[i+2] + 20); // Blue
+                data[i] = Math.min(255, data[i] + 20);
+                data[i+1] = Math.min(255, data[i+1] + 20);
+                data[i+2] = Math.min(255, data[i+2] + 20);
             }
             ctx.putImageData(imageData, 0, 0);
         }
