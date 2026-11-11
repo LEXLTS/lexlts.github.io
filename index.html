@@ -31,12 +31,13 @@
         #webcam-video { width: 100%; height: 100%; object-fit: cover; }
         #watermark-canvas { display: none; }
 
-        /* Live Overlay HUD for Running Date/Time, Timer & Location */
+        /* Live Overlay HUD for Real-Time Preview on Viewfinder */
         #live-hud-overlay {
             position: absolute; bottom: 15px; left: 15px; z-index: 20;
-            color: #ffffff; font-size: 14px; font-weight: 600;
+            color: #ffffff; font-size: 13px; font-weight: 600;
             text-shadow: 1px 1px 3px rgba(0,0,0,0.9), 0 0 5px rgba(0,0,0,0.7);
-            pointer-events: none; display: flex; flex-direction: column; gap: 4px;
+            pointer-events: none; display: flex; flex-direction: column; gap: 3px;
+            line-height: 1.3;
         }
 
         /* Zoom Slider (Vertical - Right) */
@@ -50,7 +51,7 @@
             writing-mode: vertical-lr; direction: rtl; height: 110px; accent-color: #ff7700; cursor: pointer;
         }
 
-        /* Brightness Slider (Horizontal - Bottom) - Full Range (0% to 200%) */
+        /* Brightness Slider (Horizontal - Bottom) */
         .brightness-container {
             position: absolute; bottom: 70px; left: 50%; transform: translateX(-50%);
             background: rgba(255, 255, 255, 0.9); padding: 6px 14px; border-radius: 20px;
@@ -78,7 +79,7 @@
             padding: 6px 10px; border-radius: 16px; font-size: 12px; font-weight: bold; cursor: pointer;
         }
 
-        /* Side Settings Menu with Accordion Feature Controls */
+        /* Side Settings Menu */
         #side-menu {
             position: absolute; top: 55px; right: 0; width: 310px;
             height: calc(100% - 55px - 85px - 50px); background-color: #ffffff;
@@ -110,7 +111,7 @@
             width: 100%; padding: 6px 8px; background: #fafafa; border: 1px solid #ddd; color: #222; border-radius: 6px; font-size: 12px;
         }
 
-        /* Bottom Controls - 5 Pure Icon Buttons */
+        /* Bottom Controls */
         #bottom-control-bar {
             height: 85px; background-color: #ffffff; display: flex;
             justify-content: space-around; align-items: center; z-index: 10; flex-shrink: 0; padding: 0 10px;
@@ -139,17 +140,34 @@
             border-top: 1px solid #ddd; z-index: 10; flex-shrink: 0;
         }
 
-        /* Gallery Modal */
+        /* Sleek Redesigned Preview Gallery Modal (Single Column Stream, Compact Cards) */
         #preview-modal {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background-color: #ffffff; z-index: 150; display: none; flex-direction: column; padding: 15px;
+            background-color: #f8f9fa; z-index: 150; display: none; flex-direction: column; padding: 15px;
         }
         #preview-modal.active { display: flex; }
-        .gallery-grid { flex: 1; display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; overflow-y: auto; padding-top: 12px; }
-        .gallery-item { background: #fafafa; border-radius: 8px; overflow: hidden; display: flex; flex-direction: column; border: 1px solid #eee; }
-        .gallery-item img, .gallery-item video { width: 100%; height: 120px; object-fit: cover; }
-        .gallery-actions { display: flex; justify-content: space-around; padding: 6px; background: #fff; border-top: 1px solid #eee; }
-        .gallery-actions button { background: none; border: none; color: #ff7700; font-size: 11px; font-weight: bold; cursor: pointer; }
+        .gallery-header {
+            display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 2px solid #eaeaea; padding-bottom: 12px; margin-bottom: 10px;
+        }
+        .gallery-stream { flex: 1; display: flex; flex-direction: column; gap: 14px; overflow-y: auto; padding-bottom: 20px; }
+        .gallery-card {
+            background: #ffffff; border-radius: 10px; overflow: hidden;
+            border: 1px solid #e0e0e0; box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+            display: flex; flex-direction: column;
+        }
+        .gallery-card-media { width: 100%; max-height: 240px; object-fit: cover; background: #000; }
+        .gallery-card-footer {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 10px 14px; background: #fff; border-top: 1px solid #f0f0f0;
+        }
+        .gallery-card-name { font-size: 12px; font-weight: 600; color: #444; word-break: break-all; }
+        .gallery-card-btns { display: flex; gap: 8px; }
+        .gallery-action-pill {
+            background: #fff3eb; border: 1px solid #ffccaa; color: #ff5500;
+            padding: 5px 12px; border-radius: 15px; font-size: 11px; font-weight: bold; cursor: pointer;
+        }
+        .gallery-action-pill.delete { background: #ffebee; border-color: #ffcdd2; color: #d32f2f; }
 
         /* Image Editor Modal */
         #editor-modal {
@@ -204,10 +222,11 @@
             </div>
             <canvas id="watermark-canvas"></canvas>
 
-            <!-- Running Live Time, Recording Timer & Location Overlay -->
+            <!-- Real-Time Live HUD Preview Overlay -->
             <div id="live-hud-overlay">
                 <div id="hud-datetime">⏱️ --/--/----, --:--:--</div>
                 <div id="hud-location" style="display: none;"></div>
+                <div id="hud-custom-tags"></div>
             </div>
 
             <!-- Vertical Zoom Slider -->
@@ -244,10 +263,10 @@
             <div class="feature-item">
                 <div class="feature-header">
                     <span>Sector</span>
-                    <label class="toggle-switch"><input type="checkbox" id="toggle-sector" onchange="toggleFeaturePanel('sector')"><span class="slider"></span></label>
+                    <label class="toggle-switch"><input type="checkbox" id="toggle-sector" onchange="refreshLiveHUD()"><span class="slider"></span></label>
                 </div>
-                <div class="feature-input-panel" id="panel-sector">
-                    <select id="input-sector">
+                <div class="feature-input-panel active" id="panel-sector" style="display:block;">
+                    <select id="input-sector" onchange="refreshLiveHUD()">
                         <option value="Construction">Construction Field</option>
                         <option value="IT">IT Field</option>
                         <option value="Cleaning">Cleaning Field</option>
@@ -259,70 +278,70 @@
             <div class="feature-item">
                 <div class="feature-header">
                     <span>Project Code</span>
-                    <label class="toggle-switch"><input type="checkbox" id="toggle-project" onchange="toggleFeaturePanel('project')"><span class="slider"></span></label>
+                    <label class="toggle-switch"><input type="checkbox" id="toggle-project" onchange="refreshLiveHUD()"><span class="slider"></span></label>
                 </div>
-                <div class="feature-input-panel" id="panel-project">
-                    <input type="text" id="input-project" value="GS-2026-001">
+                <div class="feature-input-panel active" id="panel-project" style="display:block;">
+                    <input type="text" id="input-project" value="GS-2026-001" oninput="refreshLiveHUD()">
                 </div>
             </div>
 
             <div class="feature-item">
                 <div class="feature-header">
                     <span>Zone / Building</span>
-                    <label class="toggle-switch"><input type="checkbox" id="toggle-zone" onchange="toggleFeaturePanel('zone')"><span class="slider"></span></label>
+                    <label class="toggle-switch"><input type="checkbox" id="toggle-zone" onchange="refreshLiveHUD()"><span class="slider"></span></label>
                 </div>
                 <div class="feature-input-panel" id="panel-zone">
-                    <input type="text" id="input-zone" value="Zone A, Building 2">
+                    <input type="text" id="input-zone" value="Zone A, Building 2" oninput="refreshLiveHUD()">
                 </div>
             </div>
 
             <div class="feature-item">
                 <div class="feature-header">
                     <span>Site In-Charge</span>
-                    <label class="toggle-switch"><input type="checkbox" id="toggle-incharge" onchange="toggleFeaturePanel('incharge')"><span class="slider"></span></label>
+                    <label class="toggle-switch"><input type="checkbox" id="toggle-incharge" onchange="refreshLiveHUD()"><span class="slider"></span></label>
                 </div>
                 <div class="feature-input-panel" id="panel-incharge">
-                    <input type="text" id="input-incharge" value="John Doe">
+                    <input type="text" id="input-incharge" value="John Doe" oninput="refreshLiveHUD()">
                 </div>
             </div>
 
             <div class="feature-item">
                 <div class="feature-header">
                     <span>Sub In-Charge</span>
-                    <label class="toggle-switch"><input type="checkbox" id="toggle-subincharge" onchange="toggleFeaturePanel('subincharge')"><span class="slider"></span></label>
+                    <label class="toggle-switch"><input type="checkbox" id="toggle-subincharge" onchange="refreshLiveHUD()"><span class="slider"></span></label>
                 </div>
                 <div class="feature-input-panel" id="panel-subincharge">
-                    <input type="text" id="input-subincharge" value="Jane Smith">
+                    <input type="text" id="input-subincharge" value="Jane Smith" oninput="refreshLiveHUD()">
                 </div>
             </div>
 
             <div class="feature-item">
                 <div class="feature-header">
                     <span>Manpower Count</span>
-                    <label class="toggle-switch"><input type="checkbox" id="toggle-manpower" onchange="toggleFeaturePanel('manpower')"><span class="slider"></span></label>
+                    <label class="toggle-switch"><input type="checkbox" id="toggle-manpower" onchange="refreshLiveHUD()"><span class="slider"></span></label>
                 </div>
                 <div class="feature-input-panel" id="panel-manpower">
-                    <input type="text" id="input-manpower" value="12 Workers">
+                    <input type="text" id="input-manpower" value="12 Workers" oninput="refreshLiveHUD()">
                 </div>
             </div>
 
             <div class="feature-item">
                 <div class="feature-header">
                     <span>Activities</span>
-                    <label class="toggle-switch"><input type="checkbox" id="toggle-activities" onchange="toggleFeaturePanel('activities')"><span class="slider"></span></label>
+                    <label class="toggle-switch"><input type="checkbox" id="toggle-activities" onchange="refreshLiveHUD()"><span class="slider"></span></label>
                 </div>
                 <div class="feature-input-panel" id="panel-activities">
-                    <textarea id="input-activities" rows="2">General Site Work</textarea>
+                    <textarea id="input-activities" rows="2" oninput="refreshLiveHUD()">General Site Work</textarea>
                 </div>
             </div>
 
             <div class="feature-item">
                 <div class="feature-header">
                     <span>Status</span>
-                    <label class="toggle-switch"><input type="checkbox" id="toggle-status" onchange="toggleFeaturePanel('status')"><span class="slider"></span></label>
+                    <label class="toggle-switch"><input type="checkbox" id="toggle-status" onchange="refreshLiveHUD()"><span class="slider"></span></label>
                 </div>
                 <div class="feature-input-panel" id="panel-status">
-                    <select id="input-status">
+                    <select id="input-status" onchange="refreshLiveHUD()">
                         <option value="Incompleted">Incompleted</option>
                         <option value="Completed">Completed</option>
                     </select>
@@ -332,20 +351,20 @@
             <div class="feature-item">
                 <div class="feature-header">
                     <span>Period of Duration</span>
-                    <label class="toggle-switch"><input type="checkbox" id="toggle-duration" onchange="toggleFeaturePanel('duration')"><span class="slider"></span></label>
+                    <label class="toggle-switch"><input type="checkbox" id="toggle-duration" onchange="refreshLiveHUD()"><span class="slider"></span></label>
                 </div>
                 <div class="feature-input-panel" id="panel-duration">
-                    <input type="text" id="input-duration" value="3 Months">
+                    <input type="text" id="input-duration" value="3 Months" oninput="refreshLiveHUD()">
                 </div>
             </div>
 
             <div class="feature-item">
                 <div class="feature-header">
                     <span>Expected Completion Date</span>
-                    <label class="toggle-switch"><input type="checkbox" id="toggle-expdate" onchange="toggleFeaturePanel('expdate')"><span class="slider"></span></label>
+                    <label class="toggle-switch"><input type="checkbox" id="toggle-expdate" onchange="refreshLiveHUD()"><span class="slider"></span></label>
                 </div>
                 <div class="feature-input-panel" id="panel-expdate">
-                    <input type="text" id="input-expdate" value="31/12/2026">
+                    <input type="text" id="input-expdate" value="31/12/2026" oninput="refreshLiveHUD()">
                 </div>
             </div>
 
@@ -353,10 +372,10 @@
             <div class="feature-item">
                 <div class="feature-header">
                     <span>Custom Tag 1</span>
-                    <label class="toggle-switch"><input type="checkbox" id="toggle-custom1" onchange="toggleFeaturePanel('custom1')"><span class="slider"></span></label>
+                    <label class="toggle-switch"><input type="checkbox" id="toggle-custom1" onchange="refreshLiveHUD()"><span class="slider"></span></label>
                 </div>
                 <div class="feature-input-panel" id="panel-custom1">
-                    <input type="text" id="input-custom1" value="Custom Value 1">
+                    <input type="text" id="input-custom1" value="Custom Value 1" oninput="refreshLiveHUD()">
                 </div>
             </div>
 
@@ -364,10 +383,10 @@
             <div class="feature-item">
                 <div class="feature-header">
                     <span>Custom Tag 2</span>
-                    <label class="toggle-switch"><input type="checkbox" id="toggle-custom2" onchange="toggleFeaturePanel('custom2')"><span class="slider"></span></label>
+                    <label class="toggle-switch"><input type="checkbox" id="toggle-custom2" onchange="refreshLiveHUD()"><span class="slider"></span></label>
                 </div>
                 <div class="feature-input-panel" id="panel-custom2">
-                    <input type="text" id="input-custom2" value="Custom Value 2">
+                    <input type="text" id="input-custom2" value="Custom Value 2" oninput="refreshLiveHUD()">
                 </div>
             </div>
 
@@ -375,21 +394,21 @@
             <div class="feature-item">
                 <div class="feature-header">
                     <span>Custom Tag 3</span>
-                    <label class="toggle-switch"><input type="checkbox" id="toggle-custom3" onchange="toggleFeaturePanel('custom3')"><span class="slider"></span></label>
+                    <label class="toggle-switch"><input type="checkbox" id="toggle-custom3" onchange="refreshLiveHUD()"><span class="slider"></span></label>
                 </div>
                 <div class="feature-input-panel" id="panel-custom3">
-                    <input type="text" id="input-custom3" value="Custom Value 3">
+                    <input type="text" id="input-custom3" value="Custom Value 3" oninput="refreshLiveHUD()">
                 </div>
             </div>
         </div>
 
-        <!-- Preview Modal Gallery -->
+        <!-- Sleek Redesigned Preview Gallery Modal -->
         <div id="preview-modal">
-            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #eee; padding-bottom:10px;">
-                <h3 style="margin:0; color:#ff7700;">Captured Gallery</h3>
-                <button onclick="closePreviewGallery()" style="background:#ff4444; border:none; color:#fff; padding:6px 14px; border-radius:6px; font-weight:bold;">Close</button>
+            <div class="gallery-header">
+                <h3 style="margin:0; color:#ff7700; font-size:16px;">Captured Gallery</h3>
+                <button onclick="closePreviewGallery()" style="background:#ff4444; border:none; color:#fff; padding:6px 14px; border-radius:6px; font-weight:bold; cursor:pointer;">Close</button>
             </div>
-            <div class="gallery-grid" id="gallery-container"></div>
+            <div class="gallery-stream" id="gallery-container"></div>
         </div>
 
         <!-- Image Editor Modal -->
@@ -447,6 +466,7 @@
         const aspectWrapper = document.getElementById('aspect-ratio-wrapper');
         const hudDatetime = document.getElementById('hud-datetime');
         const hudLocation = document.getElementById('hud-location');
+        const hudCustomTags = document.getElementById('hud-custom-tags');
         
         let capturedMediaArray = [];
         let currentFacingMode = 'environment';
@@ -464,19 +484,42 @@
         let currentEditIndex = -1;
         let editImageObj = new Image();
 
-        function updateLiveHUD() {
+        // High-performance consolidated HUD updater
+        function refreshLiveHUD() {
             const now = new Date();
             if (!isVideoRecording) {
                 hudDatetime.innerText = `⏱️ ${now.toLocaleString()}`;
             }
+
+            if (isGpsActive && currentGPSLocation) {
+                hudLocation.style.display = "block";
+                hudLocation.innerText = `📍 ${currentGPSLocation}`;
+            } else {
+                hudLocation.style.display = "none";
+            }
+
+            let activeLinesHtml = '';
+            const fields = ['sector', 'project', 'zone', 'incharge', 'subincharge', 'manpower', 'activities', 'status', 'duration', 'expdate', 'custom1', 'custom2', 'custom3'];
+            fields.forEach(f => {
+                const toggle = document.getElementById(`toggle-${f}`);
+                if (toggle && toggle.checked) {
+                    const el = document.getElementById(`input-${f}`);
+                    if (el && el.value) {
+                        let prefix = f.charAt(0).toUpperCase() + f.slice(1) + ': ';
+                        if (f.startsWith('custom')) prefix = '';
+                        activeLinesHtml += `<div>${prefix}${el.value}</div>`;
+                    }
+                }
+            });
+            hudCustomTags.innerHTML = activeLinesHtml;
         }
-        setInterval(updateLiveHUD, 1000);
-        updateLiveHUD();
+        setInterval(refreshLiveHUD, 1000);
+        refreshLiveHUD();
 
         function fetchCurrentGPS() {
             if (!isGpsActive) {
                 currentGPSLocation = "";
-                hudLocation.style.display = "none";
+                refreshLiveHUD();
                 return;
             }
 
@@ -499,18 +542,11 @@
                     } catch (e) {
                         currentGPSLocation = `GPS: ${lat.toFixed(4)}, ${lon.toFixed(4)}`;
                     }
-                    if (isGpsActive) {
-                        hudLocation.innerText = `📍 ${currentGPSLocation}`;
-                    }
+                    refreshLiveHUD();
                 }, () => {
                     currentGPSLocation = "GPS: Unavailable";
-                    if (isGpsActive) {
-                        hudLocation.innerText = `📍 ${currentGPSLocation}`;
-                    }
+                    refreshLiveHUD();
                 }, { enableHighAccuracy: true, timeout: 10000 });
-            } else {
-                currentGPSLocation = "GPS: Not Supported";
-                hudLocation.innerText = `📍 ${currentGPSLocation}`;
             }
         }
 
@@ -559,7 +595,21 @@
             } else {
                 panel.classList.remove('active');
             }
+            refreshLiveHUD();
         }
+
+        // Attach listeners to toggles for instant live preview updates
+        document.querySelectorAll('.toggle-switch input').forEach(el => {
+            el.addEventListener('change', () => {
+                const panelId = el.id.replace('toggle-', 'panel-');
+                const panel = document.getElementById(panelId);
+                if (panel) {
+                    if (el.checked) panel.classList.add('active');
+                    else panel.classList.remove('active');
+                }
+                refreshLiveHUD();
+            });
+        });
 
         function changeAspectRatio(ratio) {
             aspectWrapper.style.width = "100%";
@@ -660,7 +710,7 @@
                 clearInterval(recordingTimerInterval);
                 recordingTimerInterval = null;
             }
-            updateLiveHUD();
+            refreshLiveHUD();
         }
 
         async function saveFileToDevice(blobOrUrl, fileName, isDataUrl = false) {
@@ -713,50 +763,32 @@
             let lines = [];
             lines.push(`${timeStr}`);
             
-            // Explicitly include active resolved GPS location
             if (isGpsActive && currentGPSLocation && currentGPSLocation !== "GPS: Locating...") {
                 lines.push(currentGPSLocation);
             }
 
-            if (document.getElementById('toggle-sector').checked) {
-                lines.push(`Sector: ${document.getElementById('input-sector').value}`);
-            }
-            if (document.getElementById('toggle-project').checked) {
-                lines.push(`Project Code: ${document.getElementById('input-project').value}`);
-            }
-            if (document.getElementById('toggle-zone').checked) {
-                lines.push(`Zone/Building: ${document.getElementById('input-zone').value}`);
-            }
-            if (document.getElementById('toggle-incharge').checked) {
-                lines.push(`In-Charge: ${document.getElementById('input-incharge').value}`);
-            }
-            if (document.getElementById('toggle-subincharge').checked) {
-                lines.push(`Sub In-Charge: ${document.getElementById('input-subincharge').value}`);
-            }
-            if (document.getElementById('toggle-manpower').checked) {
-                lines.push(`Manpower: ${document.getElementById('input-manpower').value}`);
-            }
-            if (document.getElementById('toggle-activities').checked) {
-                lines.push(`Activities: ${document.getElementById('input-activities').value}`);
-            }
-            if (document.getElementById('toggle-status').checked) {
-                lines.push(`Status: ${document.getElementById('input-status').value}`);
-            }
-            if (document.getElementById('toggle-duration').checked) {
-                lines.push(`Duration: ${document.getElementById('input-duration').value}`);
-            }
-            if (document.getElementById('toggle-expdate').checked) {
-                lines.push(`Expected Completion: ${document.getElementById('input-expdate').value}`);
-            }
-            if (document.getElementById('toggle-custom1').checked) {
-                lines.push(`${document.getElementById('input-custom1').value}`);
-            }
-            if (document.getElementById('toggle-custom2').checked) {
-                lines.push(`${document.getElementById('input-custom2').value}`);
-            }
-            if (document.getElementById('toggle-custom3').checked) {
-                lines.push(`${document.getElementById('input-custom3').value}`);
-            }
+            const fields = [
+                {id: 'sector', prefix: 'Sector: '},
+                {id: 'project', prefix: 'Project Code: '},
+                {id: 'zone', prefix: 'Zone/Building: '},
+                {id: 'incharge', prefix: 'In-Charge: '},
+                {id: 'subincharge', prefix: 'Sub In-Charge: '},
+                {id: 'manpower', prefix: 'Manpower: '},
+                {id: 'activities', prefix: 'Activities: '},
+                {id: 'status', prefix: 'Status: '},
+                {id: 'duration', prefix: 'Duration: '},
+                {id: 'expdate', prefix: 'Expected Completion: '},
+                {id: 'custom1', prefix: ''},
+                {id: 'custom2', prefix: ''},
+                {id: 'custom3', prefix: ''}
+            ];
+
+            fields.forEach(f => {
+                if (document.getElementById(`toggle-${f.id}`).checked) {
+                    const val = document.getElementById(`input-${f.id}`).value;
+                    if (val) lines.push(f.prefix + val);
+                }
+            });
 
             if (lines.length > 0) {
                 ctx.shadowColor = "rgba(0, 0, 0, 0.9)";
@@ -769,7 +801,7 @@
 
                 lines.forEach((line, index) => {
                     ctx.font = 'bold 26px sans-serif';
-                    ctx.fillText(line, 45, startY + (index * 36)); // Strict fixed left margin X=45
+                    ctx.fillText(line, 45, startY + (index * 36)); // Strict flush left alignment X=45
                 });
             }
 
@@ -783,29 +815,32 @@
             await saveFileToDevice(dataUrl, fileName, true);
         }
 
+        // Sleek Redesigned Preview Gallery Stream
         function openPreviewGallery() {
             const container = document.getElementById('gallery-container');
             container.innerHTML = '';
             if (capturedMediaArray.length === 0) {
-                container.innerHTML = '<p style="grid-column: span 2; text-align:center; color:#888;">No media captured yet.</p>';
+                container.innerHTML = '<p style="text-align:center; color:#888; margin-top:40px;">No media captured yet.</p>';
             } else {
                 capturedMediaArray.forEach((item, index) => {
-                    const div = document.createElement('div');
-                    div.className = 'gallery-item';
+                    const card = document.createElement('div');
+                    card.className = 'gallery-card';
                     if (item.isVideo) {
-                        div.innerHTML = `<video src="${item.data}" controls></video>`;
+                        card.innerHTML = `<video class="gallery-card-media" src="${item.data}" controls></video>`;
                     } else {
-                        div.innerHTML = `<img src="${item.data}">`;
+                        card.innerHTML = `<img class="gallery-card-media" src="${item.data}">`;
                     }
-                    div.innerHTML += `
-                        <div style="padding: 6px; font-size: 11px; color: #555; word-break: break-all;">${item.name}</div>
-                        <div class="gallery-actions">
-                            <button onclick="shareMediaItem(${index})">Share</button>
-                            ${!item.isVideo ? `<button onclick="openImageEditor(${index})">Edit</button>` : ''}
-                            <button onclick="capturedMediaArray.splice(${index},1); openPreviewGallery();" style="color:#ff4444;">Delete</button>
+                    card.innerHTML += `
+                        <div class="gallery-card-footer">
+                            <span class="gallery-card-name">${item.name}</span>
+                            <div class="gallery-card-btns">
+                                <button class="gallery-action-pill" onclick="shareMediaItem(${index})">Share</button>
+                                ${!item.isVideo ? `<button class="gallery-action-pill" onclick="openImageEditor(${index})">Edit</button>` : ''}
+                                <button class="gallery-action-pill delete" onclick="capturedMediaArray.splice(${index},1); openPreviewGallery();">Delete</button>
+                            </div>
                         </div>
                     `;
-                    container.appendChild(div);
+                    container.appendChild(card);
                 });
             }
             document.getElementById('preview-modal').classList.add('active');
