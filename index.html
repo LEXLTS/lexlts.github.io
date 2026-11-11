@@ -50,7 +50,7 @@
             writing-mode: vertical-lr; direction: rtl; height: 110px; accent-color: #ff7700; cursor: pointer;
         }
 
-        /* Brightness Slider (Horizontal - Bottom) */
+        /* Brightness Slider (Horizontal - Bottom) - Fixed Full Range (0% to 200%) */
         .brightness-container {
             position: absolute; bottom: 70px; left: 50%; transform: translateX(-50%);
             background: rgba(255, 255, 255, 0.9); padding: 6px 14px; border-radius: 20px;
@@ -217,10 +217,10 @@
                 <span>-</span>
             </div>
 
-            <!-- Horizontal Brightness Slider -->
+            <!-- Horizontal Brightness Slider (0% to 200%) -->
             <div class="brightness-container">
                 <span>☀️</span>
-                <input type="range" id="brightness-range" min="50" max="150" value="100" oninput="adjustBrightness(this.value)">
+                <input type="range" id="brightness-range" min="0" max="200" value="100" oninput="adjustBrightness(this.value)">
             </div>
         </div>
 
@@ -448,8 +448,9 @@
         let currentGPSLocation = "";
         let recordingTimerInterval = null;
         let recordingSeconds = 0;
+        let currentEditIndex = -1;
+        let editImageObj = new Image();
 
-        // Running Live Timer Update
         function updateLiveHUD() {
             const now = new Date();
             if (!isVideoRecording) {
@@ -578,6 +579,7 @@
             }
         }
 
+        // Fixed Brightness Control (0% to 200%)
         function adjustBrightness(val) {
             videoElement.style.filter = `brightness(${val}%)`;
         }
@@ -603,16 +605,18 @@
                 }
                 mediaRecorder = new MediaRecorder(mediaStream, options);
                 mediaRecorder.ondataavailable = event => { if (event.data.size > 0) recordedChunks.push(event.data); };
-                mediaRecorder.onstop = () => {
+                mediaRecorder.onstop = async () => {
                     const blob = new Blob(recordedChunks, { type: 'video/webm' });
                     const url = URL.createObjectURL(blob);
                     const now = new Date();
                     const fileName = `GeoSnap_Video_${now.toISOString().replace(/[:.]/g, '-')}.webm`;
                     capturedMediaArray.unshift({ name: fileName, data: url, isVideo: true, blob: blob });
+                    
+                    // Save directly into mobile device gallery/downloads
+                    await saveFileToDevice(blob, fileName);
                 };
                 mediaRecorder.start(100);
 
-                // Start Recording Timer Counter on Display
                 recordingTimerInterval = setInterval(() => {
                     recordingSeconds++;
                     const mins = String(Math.floor(recordingSeconds / 60)).padStart(2, '0');
@@ -637,7 +641,40 @@
             updateLiveHUD();
         }
 
-        function captureMedia() {
+        // Helper function to save file directly to mobile device gallery storage
+        async function saveFileToDevice(blobOrUrl, fileName, isDataUrl = false) {
+            try {
+                let blob = blobOrUrl;
+                if (isDataUrl) {
+                    const res = await fetch(blobOrUrl);
+                    blob = await res.blob();
+                }
+
+                // Try File System Access API (Triggers device save / gallery dialog prompt)
+                if (window.showSaveFilePicker) {
+                    const handle = await window.showSaveFilePicker({
+                        suggestedName: fileName,
+                        types: [{ description: 'Media File', accept: { 'image/jpeg': ['.jpg'], 'video/webm': ['.webm'] } }]
+                    });
+                    const writable = await handle.createWritable();
+                    await writable.write(blob);
+                    await writable.close();
+                    return;
+                }
+            } catch (err) {
+                console.log("File System picker cancelled or unavailable, using fallback download.");
+            }
+
+            // Standard automatic download trigger to dump into device downloads/gallery
+            const a = document.createElement('a');
+            a.href = typeof blobOrUrl === 'string' ? blobOrUrl : URL.createObjectURL(blobOrUrl);
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+
+        async function captureMedia() {
             if (isVideoRecording) {
                 toggleVideoMode();
                 return;
@@ -721,6 +758,9 @@
             if (navigator.vibrate) {
                 navigator.vibrate(60);
             }
+
+            // Save directly into mobile device gallery/storage
+            await saveFileToDevice(dataUrl, fileName, true);
         }
 
         function openPreviewGallery() {
@@ -807,10 +847,14 @@
             document.getElementById('editor-modal').classList.remove('active');
         }
 
-        function saveImageEdit() {
+        async function saveImageEdit() {
             const canvas = document.getElementById('edit-canvas');
             const newUrl = canvas.toDataURL('image/jpeg', 0.98);
             capturedMediaArray[currentEditIndex].data = newUrl;
+            
+            const fileName = capturedMediaArray[currentEditIndex].name;
+            await saveFileToDevice(newUrl, fileName, true);
+
             closeImageEditor();
             openPreviewGallery();
         }
