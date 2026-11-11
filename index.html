@@ -492,18 +492,25 @@
                         const data = await response.json();
                         if (data && data.display_name) {
                             const parts = data.display_name.split(',');
-                            currentGPSLocation = `📍 GPS: ${parts[0].trim()}, ${parts[1] ? parts[1].trim() : ''} Singapore`;
+                            currentGPSLocation = `GPS: ${parts[0].trim()}, ${parts[1] ? parts[1].trim() : ''} Singapore`;
                         } else {
-                            currentGPSLocation = `📍 GPS: ${lat.toFixed(4)}, ${lon.toFixed(4)}`;
+                            currentGPSLocation = `GPS: ${lat.toFixed(4)}, ${lon.toFixed(4)}`;
                         }
                     } catch (e) {
-                        currentGPSLocation = `📍 GPS: ${lat.toFixed(4)}, ${lon.toFixed(4)}`;
+                        currentGPSLocation = `GPS: ${lat.toFixed(4)}, ${lon.toFixed(4)}`;
                     }
-                    if (isGpsActive) hudLocation.innerText = currentGPSLocation;
+                    if (isGpsActive) {
+                        hudLocation.innerText = `📍 ${currentGPSLocation}`;
+                    }
                 }, () => {
-                    currentGPSLocation = "";
-                    hudLocation.style.display = "none";
+                    currentGPSLocation = "GPS: Unavailable";
+                    if (isGpsActive) {
+                        hudLocation.innerText = `📍 ${currentGPSLocation}`;
+                    }
                 }, { enableHighAccuracy: true, timeout: 10000 });
+            } else {
+                currentGPSLocation = "GPS: Not Supported";
+                hudLocation.innerText = `📍 ${currentGPSLocation}`;
             }
         }
 
@@ -704,8 +711,10 @@
             const fileName = `GeoSnap_${now.toISOString().replace(/[:.]/g, '-')}.jpg`;
 
             let lines = [];
-            lines.push(`⏱️ ${timeStr}`);
-            if (isGpsActive && currentGPSLocation) {
+            lines.push(`${timeStr}`);
+            
+            // Explicitly include active resolved GPS location
+            if (isGpsActive && currentGPSLocation && currentGPSLocation !== "GPS: Locating...") {
                 lines.push(currentGPSLocation);
             }
 
@@ -756,11 +765,11 @@
                 ctx.shadowOffsetY = 2;
                 ctx.fillStyle = '#ffffff';
 
-                let startY = canvas.height - (lines.length * 34) - 30;
+                let startY = canvas.height - (lines.length * 36) - 40;
 
                 lines.forEach((line, index) => {
-                    ctx.font = 'bold 24px sans-serif';
-                    ctx.fillText(line, 40, startY + (index * 34)); // Uniform left margin X = 40 for perfect alignment
+                    ctx.font = 'bold 26px sans-serif';
+                    ctx.fillText(line, 45, startY + (index * 36)); // Strict fixed left margin X=45
                 });
             }
 
