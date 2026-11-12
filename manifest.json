@@ -1,17 +1,5 @@
 {
-  "name": "GeoSnap",
-  "short_name": "GeoSnap",
-  "start_url": "/",
-  "display": "standalone",
-  "background_color": "#111111",
-  "theme_color": "#111111",
-  "orientation": "portrait",
-  "icons": [
-    {
-      "src": "/icon.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
-    }
-  ]
+  "display": "fullscreen",
+  "background_color": "#000000",
+  "theme_color": "#000000"
 }
