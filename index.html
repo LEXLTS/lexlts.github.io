@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>GeoSnap</title>
     <link rel="manifest" href="/manifest.json">
-    <meta name="theme-color" content="#ffffff">
+    <meta name="theme-color" content="#000000">
     <style>
         * { box-sizing: border-box; }
         body, html {
@@ -41,6 +41,15 @@
             line-height: 1.3;
         }
 
+        /* Subtle In-App Toast (Replaces Chrome Download Banner) */
+        #app-toast {
+            position: absolute; top: 68px; left: 50%; transform: translateX(-50%);
+            background: rgba(20, 20, 20, 0.85); color: #fff; padding: 6px 14px;
+            border-radius: 20px; font-size: 12px; font-weight: 600; z-index: 100;
+            opacity: 0; pointer-events: none; transition: opacity 0.25s ease;
+        }
+        #app-toast.show { opacity: 1; }
+
         /* Zoom Slider (Vertical - Right) */
         .zoom-slider-container {
             position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
@@ -61,7 +70,7 @@
         }
         .brightness-container input[type=range] { width: 100%; accent-color: #ff7700; cursor: pointer; }
 
-        /* Top Bar - Clean White Icon Buttons */
+        /* Top Bar */
         #top-controls {
             position: absolute; top: 0; left: 0; width: 100%; height: 55px;
             display: flex; justify-content: space-between; align-items: center; padding: 0 12px;
@@ -137,7 +146,12 @@
             border: 3px solid #fff; cursor: pointer; box-shadow: 0 4px 12px rgba(255, 119, 0, 0.4);
             display: flex; justify-content: center; align-items: center; flex-shrink: 0;
         }
-        .capture-btn-inner { width: 50px; height: 50px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.8); }
+        .capture-btn.recording {
+            background: linear-gradient(135deg, #ff3b30, #b71c1c);
+            box-shadow: 0 4px 14px rgba(255, 59, 48, 0.6);
+        }
+        .capture-btn-inner { width: 50px; height: 50px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.8); transition: all 0.2s ease; }
+        .capture-btn.recording .capture-btn-inner { width: 24px; height: 24px; border-radius: 4px; background: #fff; border: none; }
 
         /* AdSense Banner Container */
         #adsense-container {
@@ -175,8 +189,12 @@
         .gallery-thumb-item img, .gallery-thumb-item video {
             width: 100%; height: 100%; object-fit: cover;
         }
+        .video-badge {
+            position: absolute; bottom: 6px; right: 6px; background: rgba(0,0,0,0.75);
+            color: #fff; font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: bold;
+        }
 
-        /* Fullscreen Lightbox Modal (Appears when tapping a thumbnail) */
+        /* Lightbox Modal */
         #lightbox-modal {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background-color: rgba(0, 0, 0, 0.92); z-index: 250; display: none;
@@ -194,11 +212,11 @@
             background: rgba(30, 30, 30, 0.9); padding: 14px; border-radius: 12px; gap: 10px;
         }
         .lightbox-btn {
-            background: #ff7700; border: none; color: #fff; padding: 10px 18px;
+            background: #ff7700; border: none; color: #fff; padding: 10px 14px;
             border-radius: 8px; font-size: 13px; font-weight: bold; cursor: pointer; flex: 1; text-align: center;
         }
+        .lightbox-btn.save { background: #2e7d32; }
         .lightbox-btn.delete { background: #d32f2f; }
-        .lightbox-btn.back { background: #444; }
 
         /* Image Editor Modal */
         #editor-modal {
@@ -246,6 +264,8 @@
             </button>
         </div>
 
+        <div id="app-toast">Saved to Gallery</div>
+
         <!-- Camera Feed & Interactive Sliders -->
         <div id="camera-feed-container" onclick="handleScreenTap(event)">
             <div id="aspect-ratio-wrapper">
@@ -268,35 +288,21 @@
                 <span>-</span>
             </div>
 
-            <!-- Horizontal Brightness Slider (0% to 200%) -->
+            <!-- Horizontal Brightness Slider (40% to 180% so screen never goes black) -->
             <div class="brightness-container" onclick="event.stopPropagation()">
                 <span>☀️</span>
-                <input type="range" id="brightness-range" min="0" max="200" value="100" oninput="adjustBrightness(this.value)">
+                <input type="range" id="brightness-range" min="40" max="180" value="100" oninput="adjustBrightness(this.value)">
             </div>
         </div>
 
-        <!-- 3-Dot Drawer with Accordion Feature Controls & Video Format Selector -->
+        <!-- Side Settings Menu -->
         <div id="side-menu" onclick="event.stopPropagation()">
             <h4>Feature Customizations</h4>
 
-            <!-- Auto-Save Storage Toggle -->
             <div class="feature-item">
                 <div class="feature-header">
-                    <span>Auto Save Media (No Prompt)</span>
-                    <label class="toggle-switch"><input type="checkbox" id="toggle-autosave" checked><span class="slider"></span></label>
-                </div>
-            </div>
-            
-            <!-- Video Format Selector -->
-            <div class="feature-item">
-                <div class="feature-header">
-                    <span>Video Format</span>
-                </div>
-                <div class="feature-input-panel active" style="margin-top:6px;">
-                    <select id="input-video-format">
-                        <option value="mp4">MP4 (.mp4)</option>
-                        <option value="webm">WebM (.webm)</option>
-                    </select>
+                    <span>Auto Download to Phone</span>
+                    <label class="toggle-switch"><input type="checkbox" id="toggle-autosave"><span class="slider"></span></label>
                 </div>
             </div>
 
@@ -408,7 +414,6 @@
                 </div>
             </div>
 
-            <!-- Custom Tag 1 -->
             <div class="feature-item">
                 <div class="feature-header">
                     <span>Custom Tag 1</span>
@@ -419,7 +424,6 @@
                 </div>
             </div>
 
-            <!-- Custom Tag 2 -->
             <div class="feature-item">
                 <div class="feature-header">
                     <span>Custom Tag 2</span>
@@ -430,7 +434,6 @@
                 </div>
             </div>
 
-            <!-- Custom Tag 3 -->
             <div class="feature-item">
                 <div class="feature-header">
                     <span>Custom Tag 3</span>
@@ -442,7 +445,7 @@
             </div>
         </div>
 
-        <!-- Preview Gallery Modal (Clean Gallery View) -->
+        <!-- Preview Gallery Modal -->
         <div id="preview-modal">
             <div class="gallery-header">
                 <h3 style="margin:0; color:#ff7700; font-size:16px;">Captured Gallery</h3>
@@ -455,7 +458,7 @@
             <div class="gallery-stream" id="gallery-container"></div>
         </div>
 
-        <!-- Lightbox Modal (Appears when tapping any image/video to reveal Share, Edit, Delete) -->
+        <!-- Lightbox Modal -->
         <div id="lightbox-modal">
             <div style="display:flex; justify-content:space-between; align-items:center; color:#fff; font-size:12px;">
                 <span id="lightbox-filename" style="opacity:0.8;"></span>
@@ -500,7 +503,6 @@
                 <div class="capture-btn-inner"></div>
             </div>
 
-            <!-- Gallery Button with live thumbnail preview inside -->
             <button class="bottom-icon-btn" onclick="openPreviewGallery()" title="Gallery">
                 <svg id="gallery-default-icon" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
                 <img id="gallery-icon-thumb" src="" alt="Thumb">
@@ -532,6 +534,7 @@
         let mediaRecorder = null;
         let recordedChunks = [];
         let flashState = false;
+        let currentBrightness = 100;
         
         let isGpsActive = false;
         let currentGPSLocation = "";
@@ -540,9 +543,74 @@
         let currentEditIndex = -1;
         let editImageObj = new Image();
 
-        let canvasStream = null;
-        let videoCanvasTimer = null;
+        let videoAnimFrame = null;
         let isGalleryGridView = false;
+        let db = null;
+
+        // Initialize IndexedDB so photos & videos persist silently without Chrome download banners
+        function initDB() {
+            const request = indexedDB.open("GeoSnapMediaDB", 1);
+            request.onupgradeneeded = (e) => {
+                const database = e.target.result;
+                if (!database.objectStoreNames.contains("media")) {
+                    database.createObjectStore("media", { keyPath: "id", autoIncrement: true });
+                }
+            };
+            request.onsuccess = (e) => {
+                db = e.target.result;
+                loadSavedMediaFromDB();
+            };
+        }
+
+        function saveMediaToDB(item) {
+            if (!db) return;
+            const tx = db.transaction("media", "readwrite");
+            const store = tx.objectStore("media");
+            const req = store.add({
+                name: item.name,
+                isVideo: item.isVideo,
+                blob: item.blob,
+                mimeType: item.mimeType || 'image/jpeg'
+            });
+            req.onsuccess = (e) => {
+                item.id = e.target.result;
+            };
+        }
+
+        function deleteMediaFromDB(id) {
+            if (!db || !id) return;
+            const tx = db.transaction("media", "readwrite");
+            tx.objectStore("media").delete(id);
+        }
+
+        function loadSavedMediaFromDB() {
+            if (!db) return;
+            const tx = db.transaction("media", "readonly");
+            const req = tx.objectStore("media").getAll();
+            req.onsuccess = () => {
+                const records = req.result || [];
+                capturedMediaArray = records.reverse().map(rec => ({
+                    id: rec.id,
+                    name: rec.name,
+                    isVideo: rec.isVideo,
+                    blob: rec.blob,
+                    mimeType: rec.mimeType,
+                    data: URL.createObjectURL(rec.blob)
+                }));
+                if (capturedMediaArray.length > 0) {
+                    const firstImg = capturedMediaArray.find(m => !m.isVideo);
+                    if (firstImg) updateGalleryThumbnail(firstImg.data);
+                }
+            };
+        }
+        initDB();
+
+        function showToast(msg) {
+            const t = document.getElementById('app-toast');
+            t.innerText = msg;
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 1800);
+        }
 
         function refreshLiveHUD() {
             const now = new Date();
@@ -631,7 +699,9 @@
                 mediaStream = await navigator.mediaDevices.getUserMedia({
                     video: {
                         facingMode: { ideal: currentFacingMode },
-                        width: { ideal: 1920 }, height: { ideal: 1080 }
+                        width: { ideal: 1920 },
+                        height: { ideal: 1080 },
+                        frameRate: { ideal: 30 }
                     },
                     audio: true
                 });
@@ -639,7 +709,7 @@
                 videoTrack = mediaStream.getVideoTracks()[0];
             } catch (err) {
                 try {
-                    mediaStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                    mediaStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
                     videoElement.srcObject = mediaStream;
                     videoTrack = mediaStream.getVideoTracks()[0];
                 } catch (e) {
@@ -676,8 +746,8 @@
             } else if (ratio === '4:3') {
                 aspectWrapper.style.height = "75%";
             } else if (ratio === '1:1') {
-                aspectWrapper.style.height = "100vh";
-                aspectWrapper.style.width = "100vh";
+                aspectWrapper.style.height = "100vw";
+                aspectWrapper.style.width = "100vw";
             }
         }
 
@@ -692,7 +762,7 @@
                 flashState = !flashState;
                 await videoTrack.applyConstraints({ advanced: [{ torch: flashState }] });
             } catch (e) {
-                alert("Flash torch not supported on this camera.");
+                showToast("Flash not supported on this lens");
             }
         }
 
@@ -705,13 +775,18 @@
         }
 
         function adjustBrightness(val) {
-            videoElement.style.filter = `brightness(${val}%)`;
+            currentBrightness = parseInt(val, 10);
+            if (currentBrightness < 40) currentBrightness = 40;
+            videoElement.style.filter = `brightness(${currentBrightness}%)`;
         }
 
         function toggleVideoMode() {
             isVideoRecording = !isVideoRecording;
             const btn = document.getElementById('btn-video-toggle');
+            const capBtn = document.getElementById('capture-button');
             btn.classList.toggle('active', isVideoRecording);
+            capBtn.classList.toggle('recording', isVideoRecording);
+            
             if (isVideoRecording) {
                 startRecording();
             } else {
@@ -727,181 +802,9 @@
             defaultIcon.style.display = 'none';
         }
 
-        function startRecording() {
-            recordedChunks = [];
-            recordingSeconds = 0;
-            const format = document.getElementById('input-video-format').value;
-            const ext = format === 'mp4' ? 'mp4' : 'webm';
-            
-            try {
-                const canvas = document.getElementById('video-canvas');
-                canvas.width = videoElement.videoWidth || 1920;
-                canvas.height = videoElement.videoHeight || 1080;
-                const ctx = canvas.getContext('2d');
-
-                videoCanvasTimer = setInterval(() => {
-                    if (!isVideoRecording) return;
-                    ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
-
-                    let lines = [];
-                    lines.push(`${new Date().toLocaleString()}`);
-                    if (isGpsActive && currentGPSLocation && currentGPSLocation !== "GPS: Locating...") {
-                        lines.push(currentGPSLocation);
-                    }
-
-                    const fields = [
-                        {id: 'sector', prefix: 'Sector: '},
-                        {id: 'project', prefix: 'Project Code: '},
-                        {id: 'zone', prefix: 'Zone/Building: '},
-                        {id: 'incharge', prefix: 'In-Charge: '},
-                        {id: 'subincharge', prefix: 'Sub In-Charge: '},
-                        {id: 'manpower', prefix: 'Manpower: '},
-                        {id: 'activities', prefix: 'Activities: '},
-                        {id: 'status', prefix: 'Status: '},
-                        {id: 'duration', prefix: 'Duration: '},
-                        {id: 'expdate', prefix: 'Expected Completion: '},
-                        {id: 'custom1', prefix: ''},
-                        {id: 'custom2', prefix: ''},
-                        {id: 'custom3', prefix: ''}
-                    ];
-
-                    fields.forEach(f => {
-                        if (document.getElementById(`toggle-${f.id}`).checked) {
-                            const val = document.getElementById(`input-${f.id}`).value;
-                            if (val) lines.push(f.prefix + val);
-                        }
-                    });
-
-                    if (lines.length > 0) {
-                        ctx.shadowColor = "rgba(0, 0, 0, 0.9)";
-                        ctx.shadowBlur = 6;
-                        ctx.shadowOffsetX = 2;
-                        ctx.shadowOffsetY = 2;
-                        ctx.fillStyle = '#ffffff';
-
-                        let startY = canvas.height - (lines.length * 36) - 40;
-                        lines.forEach((line, index) => {
-                            ctx.font = 'bold 26px sans-serif';
-                            ctx.fillText(line, 45, startY + (index * 36));
-                        });
-                    }
-                }, 1000 / 30);
-
-                canvasStream = canvas.captureStream(30);
-                const audioTracks = mediaStream.getAudioTracks();
-                if (audioTracks.length > 0) {
-                    canvasStream.addTrack(audioTracks[0]);
-                }
-
-                let options = { mimeType: format === 'mp4' ? 'video/mp4' : 'video/webm;codecs=vp9,opus' };
-                if (!MediaRecorder.isTypeSupported(options.mimeType)) {
-                    options = { mimeType: 'video/webm' };
-                }
-                if (!MediaRecorder.isTypeSupported(options.mimeType)) {
-                    options = {};
-                }
-
-                mediaRecorder = new MediaRecorder(canvasStream, options);
-                mediaRecorder.ondataavailable = event => {
-                    if (event.data && event.data.size > 0) {
-                        recordedChunks.push(event.data);
-                    }
-                };
-                mediaRecorder.onstop = async () => {
-                    const blob = new Blob(recordedChunks, { type: mediaRecorder.mimeType || 'video/webm' });
-                    const url = URL.createObjectURL(blob);
-                    const now = new Date();
-                    const fileName = `GeoSnap_Video_${now.toISOString().replace(/[:.]/g, '-')}.${ext}`;
-                    
-                    capturedMediaArray.unshift({ name: fileName, data: url, isVideo: true, blob: blob });
-                    updateGalleryThumbnail(url);
-
-                    if (videoCanvasTimer) clearInterval(videoCanvasTimer);
-                    await saveFileToDevice(blob, fileName);
-                };
-                mediaRecorder.start(250);
-
-                recordingTimerInterval = setInterval(() => {
-                    recordingSeconds++;
-                    const mins = String(Math.floor(recordingSeconds / 60)).padStart(2, '0');
-                    const secs = String(recordingSeconds % 60).padStart(2, '0');
-                    hudDatetime.innerText = `🔴 REC [${mins}:${secs}]`;
-                }, 1000);
-            } catch (e) {
-                alert("Video recording setup failed: " + e.message);
-                isVideoRecording = false;
-                if (videoCanvasTimer) clearInterval(videoCanvasTimer);
-                document.getElementById('btn-video-toggle').classList.remove('active');
-            }
-        }
-
-        function stopRecording() {
-            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-                mediaRecorder.stop();
-            }
-            if (recordingTimerInterval) {
-                clearInterval(recordingTimerInterval);
-                recordingTimerInterval = null;
-            }
-            if (videoCanvasTimer) {
-                clearInterval(videoCanvasTimer);
-                videoCanvasTimer = null;
-            }
-            refreshLiveHUD();
-        }
-
-        async function saveFileToDevice(blobOrUrl, fileName, isDataUrl = false) {
-            const isAutoSave = document.getElementById('toggle-autosave').checked;
-            let blob = blobOrUrl;
-
-            if (isDataUrl) {
-                const res = await fetch(blobOrUrl);
-                blob = await res.blob();
-            }
-
-            if (!isAutoSave && window.showSaveFilePicker) {
-                try {
-                    const handle = await window.showSaveFilePicker({
-                        suggestedName: fileName,
-                        types: [{ description: 'Media File', accept: { 'image/jpeg': ['.jpg'], 'video/mp4': ['.mp4'], 'video/webm': ['.webm'] } }]
-                    });
-                    const writable = await handle.createWritable();
-                    await writable.write(blob);
-                    await writable.close();
-                    return;
-                } catch (err) {
-                    console.log("File picker cancelled, using automatic download.");
-                }
-            }
-
-            const a = document.createElement('a');
-            a.href = typeof blobOrUrl === 'string' ? blobOrUrl : URL.createObjectURL(blobOrUrl);
-            a.download = fileName;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-        }
-
-        async function captureMedia() {
-            if (isVideoRecording) {
-                toggleVideoMode();
-                return;
-            }
-
-            const canvas = document.getElementById('watermark-canvas');
-            canvas.width = videoElement.videoWidth || 3840;
-            canvas.height = videoElement.videoHeight || 2160;
-            const ctx = canvas.getContext('2d');
-
-            ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
-
-            const now = new Date();
-            const timeStr = now.toLocaleString();
-            const fileName = `GeoSnap_${now.toISOString().replace(/[:.]/g, '-')}.jpg`;
-
+        function getWatermarkLines() {
             let lines = [];
-            lines.push(`${timeStr}`);
-            
+            lines.push(`${new Date().toLocaleString()}`);
             if (isGpsActive && currentGPSLocation && currentGPSLocation !== "GPS: Locating...") {
                 lines.push(currentGPSLocation);
             }
@@ -928,31 +831,187 @@
                     if (val) lines.push(f.prefix + val);
                 }
             });
+            return lines;
+        }
+
+        function startRecording() {
+            recordedChunks = [];
+            recordingSeconds = 0;
+
+            try {
+                const canvas = document.getElementById('video-canvas');
+                const vw = videoElement.videoWidth || 1280;
+                const vh = videoElement.videoHeight || 720;
+                canvas.width = vw;
+                canvas.height = vh;
+                const ctx = canvas.getContext('2d', { alpha: false });
+
+                function drawVideoFrame() {
+                    if (!isVideoRecording) return;
+                    ctx.filter = `brightness(${currentBrightness}%)`;
+                    ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+                    ctx.filter = 'none';
+
+                    const lines = getWatermarkLines();
+                    if (lines.length > 0) {
+                        const fontSize = Math.max(20, Math.round(canvas.width * 0.022));
+                        const lineHeight = Math.round(fontSize * 1.35);
+                        ctx.shadowColor = "rgba(0, 0, 0, 0.9)";
+                        ctx.shadowBlur = 6;
+                        ctx.shadowOffsetX = 2;
+                        ctx.shadowOffsetY = 2;
+                        ctx.fillStyle = '#ffffff';
+                        ctx.font = `bold ${fontSize}px sans-serif`;
+
+                        let startY = canvas.height - (lines.length * lineHeight) - 30;
+                        lines.forEach((line, index) => {
+                            ctx.fillText(line, 35, startY + (index * lineHeight));
+                        });
+                    }
+                    videoAnimFrame = requestAnimationFrame(drawVideoFrame);
+                }
+                drawVideoFrame();
+
+                const canvasStream = canvas.captureStream(30);
+                const audioTracks = mediaStream ? mediaStream.getAudioTracks() : [];
+                if (audioTracks.length > 0) {
+                    canvasStream.addTrack(audioTracks[0]);
+                }
+
+                // Select best supported hardware codec on Android Chrome
+                const supportedTypes = [
+                    'video/webm;codecs=vp8,opus',
+                    'video/webm;codecs=vp9,opus',
+                    'video/webm',
+                    'video/mp4'
+                ];
+                let selectedMime = '';
+                for (const t of supportedTypes) {
+                    if (MediaRecorder.isTypeSupported(t)) {
+                        selectedMime = t;
+                        break;
+                    }
+                }
+
+                const recorderOptions = selectedMime
+                    ? { mimeType: selectedMime, videoBitsPerSecond: 8000000 }
+                    : { videoBitsPerSecond: 8000000 };
+
+                mediaRecorder = new MediaRecorder(canvasStream, recorderOptions);
+                mediaRecorder.ondataavailable = event => {
+                    if (event.data && event.data.size > 0) {
+                        recordedChunks.push(event.data);
+                    }
+                };
+
+                mediaRecorder.onstop = async () => {
+                    const mime = mediaRecorder.mimeType || 'video/webm';
+                    const ext = mime.includes('mp4') ? 'mp4' : 'webm';
+                    const blob = new Blob(recordedChunks, { type: mime });
+                    const url = URL.createObjectURL(blob);
+                    const now = new Date();
+                    const fileName = `GeoSnap_Video_${now.toISOString().replace(/[:.]/g, '-')}.${ext}`;
+                    
+                    const mediaObj = { name: fileName, data: url, isVideo: true, blob: blob, mimeType: mime };
+                    capturedMediaArray.unshift(mediaObj);
+                    saveMediaToDB(mediaObj);
+                    showToast("HD Video saved to Gallery");
+
+                    if (document.getElementById('toggle-autosave').checked) {
+                        triggerDeviceDownload(url, fileName);
+                    }
+                };
+
+                mediaRecorder.start(500);
+                showToast("Recording HD Video...");
+
+                recordingTimerInterval = setInterval(() => {
+                    recordingSeconds++;
+                    const mins = String(Math.floor(recordingSeconds / 60)).padStart(2, '0');
+                    const secs = String(recordingSeconds % 60).padStart(2, '0');
+                    hudDatetime.innerText = `🔴 REC [${mins}:${secs}]`;
+                }, 1000);
+            } catch (e) {
+                alert("Video recording error: " + e.message);
+                isVideoRecording = false;
+                document.getElementById('btn-video-toggle').classList.remove('active');
+                document.getElementById('capture-button').classList.remove('recording');
+            }
+        }
+
+        function stopRecording() {
+            if (videoAnimFrame) {
+                cancelAnimationFrame(videoAnimFrame);
+                videoAnimFrame = null;
+            }
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                mediaRecorder.stop();
+            }
+            if (recordingTimerInterval) {
+                clearInterval(recordingTimerInterval);
+                recordingTimerInterval = null;
+            }
+            refreshLiveHUD();
+        }
+
+        function triggerDeviceDownload(url, fileName) {
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+
+        async function captureMedia() {
+            if (isVideoRecording) {
+                toggleVideoMode();
+                return;
+            }
+
+            const canvas = document.getElementById('watermark-canvas');
+            canvas.width = videoElement.videoWidth || 1920;
+            canvas.height = videoElement.videoHeight || 1080;
+            const ctx = canvas.getContext('2d');
+
+            ctx.filter = `brightness(${currentBrightness}%)`;
+            ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+            ctx.filter = 'none';
+
+            const now = new Date();
+            const fileName = `GeoSnap_${now.toISOString().replace(/[:.]/g, '-')}.jpg`;
+            const lines = getWatermarkLines();
 
             if (lines.length > 0) {
+                const fontSize = Math.max(24, Math.round(canvas.width * 0.022));
+                const lineHeight = Math.round(fontSize * 1.35);
                 ctx.shadowColor = "rgba(0, 0, 0, 0.9)";
                 ctx.shadowBlur = 6;
                 ctx.shadowOffsetX = 2;
                 ctx.shadowOffsetY = 2;
                 ctx.fillStyle = '#ffffff';
+                ctx.font = `bold ${fontSize}px sans-serif`;
 
-                let startY = canvas.height - (lines.length * 36) - 40;
-
+                let startY = canvas.height - (lines.length * lineHeight) - 35;
                 lines.forEach((line, index) => {
-                    ctx.font = 'bold 26px sans-serif';
-                    ctx.fillText(line, 45, startY + (index * 36));
+                    ctx.fillText(line, 40, startY + (index * lineHeight));
                 });
             }
 
-            const dataUrl = canvas.toDataURL('image/jpeg', 0.98);
-            capturedMediaArray.unshift({ name: fileName, data: dataUrl, isVideo: false });
-            updateGalleryThumbnail(dataUrl);
+            canvas.toBlob((blob) => {
+                const url = URL.createObjectURL(blob);
+                const mediaObj = { name: fileName, data: url, isVideo: false, blob: blob, mimeType: 'image/jpeg' };
+                capturedMediaArray.unshift(mediaObj);
+                saveMediaToDB(mediaObj);
+                updateGalleryThumbnail(url);
+                showToast("Saved to Gallery");
 
-            if (navigator.vibrate) {
-                navigator.vibrate(60);
-            }
+                if (navigator.vibrate) navigator.vibrate(50);
 
-            await saveFileToDevice(dataUrl, fileName, true);
+                if (document.getElementById('toggle-autosave').checked) {
+                    triggerDeviceDownload(url, fileName);
+                }
+            }, 'image/jpeg', 0.96);
         }
 
         function toggleGalleryViewMode() {
@@ -980,7 +1039,7 @@
                     thumbDiv.onclick = () => openLightbox(index);
 
                     if (item.isVideo) {
-                        thumbDiv.innerHTML = `<video src="${item.data}"></video>`;
+                        thumbDiv.innerHTML = `<video src="${item.data}" muted playsinline></video><span class="video-badge">▶ VIDEO</span>`;
                     } else {
                         thumbDiv.innerHTML = `<img src="${item.data}" alt="${item.name}">`;
                     }
@@ -995,7 +1054,6 @@
             document.getElementById('preview-modal').classList.remove('active');
         }
 
-        // Lightbox Functions (Opened when tapping a thumbnail)
         function openLightbox(index) {
             const item = capturedMediaArray[index];
             const mediaContainer = document.getElementById('lightbox-media-container');
@@ -1003,10 +1061,11 @@
             const filenameLabel = document.getElementById('lightbox-filename');
 
             filenameLabel.innerText = item.name;
-            mediaContainer.innerHTML = item.isVideo ? `<video src="${item.data}" controls autoplay></video>` : `<img src="${item.data}">`;
+            mediaContainer.innerHTML = item.isVideo ? `<video src="${item.data}" controls autoplay playsinline></video>` : `<img src="${item.data}">`;
 
             footerBtns.innerHTML = `
                 <button class="lightbox-btn" onclick="shareMediaItem(${index})">Share</button>
+                <button class="lightbox-btn save" onclick="triggerDeviceDownload('${item.data}', '${item.name}')">Save</button>
                 ${!item.isVideo ? `<button class="lightbox-btn" onclick="closeLightbox(); openImageEditor(${index})">Edit</button>` : ''}
                 <button class="lightbox-btn delete" onclick="deleteMediaItem(${index})">Delete</button>
             `;
@@ -1019,11 +1078,14 @@
         }
 
         function deleteMediaItem(index) {
+            const item = capturedMediaArray[index];
+            if (item && item.id) deleteMediaFromDB(item.id);
             capturedMediaArray.splice(index, 1);
             closeLightbox();
             openPreviewGallery();
-            if (capturedMediaArray.length > 0) {
-                updateGalleryThumbnail(capturedMediaArray[0].data);
+            const nextImg = capturedMediaArray.find(m => !m.isVideo);
+            if (nextImg) {
+                updateGalleryThumbnail(nextImg.data);
             } else {
                 document.getElementById('gallery-icon-thumb').style.display = 'none';
                 document.getElementById('gallery-default-icon').style.display = 'block';
@@ -1034,15 +1096,7 @@
             const item = capturedMediaArray[index];
             try {
                 if (navigator.share) {
-                    let fileToShare;
-                    if (item.blob) {
-                        fileToShare = new File([item.blob], item.name, { type: item.blob.type });
-                    } else {
-                        const res = await fetch(item.data);
-                        const blob = await res.blob();
-                        fileToShare = new File([blob], item.name, { type: 'image/jpeg' });
-                    }
-
+                    const fileToShare = new File([item.blob], item.name, { type: item.mimeType || item.blob.type });
                     if (navigator.canShare && navigator.canShare({ files: [fileToShare] })) {
                         await navigator.share({
                             title: 'GeoSnap Media',
@@ -1052,10 +1106,7 @@
                         return;
                     }
                 }
-                const a = document.createElement('a');
-                a.download = item.name;
-                a.href = item.data;
-                a.click();
+                triggerDeviceDownload(item.data, item.name);
             } catch (e) {
                 console.log("Sharing cancelled:", e);
             }
@@ -1081,17 +1132,20 @@
             document.getElementById('editor-modal').classList.remove('active');
         }
 
-        async function saveImageEdit() {
+        function saveImageEdit() {
             const canvas = document.getElementById('edit-canvas');
-            const newUrl = canvas.toDataURL('image/jpeg', 0.98);
-            capturedMediaArray[currentEditIndex].data = newUrl;
-            updateGalleryThumbnail(newUrl);
-            
-            const fileName = capturedMediaArray[currentEditIndex].name;
-            await saveFileToDevice(newUrl, fileName, true);
-
-            closeImageEditor();
-            openPreviewGallery();
+            canvas.toBlob((blob) => {
+                const newUrl = URL.createObjectURL(blob);
+                const item = capturedMediaArray[currentEditIndex];
+                if (item.id) deleteMediaFromDB(item.id);
+                item.data = newUrl;
+                item.blob = blob;
+                saveMediaToDB(item);
+                updateGalleryThumbnail(newUrl);
+                showToast("Edits saved");
+                closeImageEditor();
+                openPreviewGallery();
+            }, 'image/jpeg', 0.96);
         }
 
         function rotateImage(deg) {
