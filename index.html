@@ -32,19 +32,22 @@
         #watermark-canvas { display: none; }
         #video-canvas { display: none; }
 
-        /* Real-Time Live HUD Preview Overlay */
+        /* Orientation-Aware Live HUD Preview Overlay */
         #live-hud-overlay {
-            position: absolute; bottom: 15px; left: 15px; z-index: 20;
+            position: absolute; bottom: 16px; left: 16px; z-index: 20;
             color: #ffffff; font-size: 13px; font-weight: 600;
-            text-shadow: 1px 1px 3px rgba(0,0,0,0.9), 0 0 5px rgba(0,0,0,0.7);
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.95), 0 0 6px rgba(0,0,0,0.8);
             pointer-events: none; display: flex; flex-direction: column; gap: 3px;
-            line-height: 1.3;
+            line-height: 1.3; max-width: 78%;
+        }
+        #live-hud-overlay.landscape-hud {
+            bottom: 14px; left: 20px; font-size: 14px; max-width: 65%;
         }
 
-        /* Subtle In-App Toast (Replaces Chrome Download Banner) */
+        /* Subtle In-App Toast */
         #app-toast {
             position: absolute; top: 68px; left: 50%; transform: translateX(-50%);
-            background: rgba(20, 20, 20, 0.85); color: #fff; padding: 6px 14px;
+            background: rgba(20, 20, 20, 0.88); color: #fff; padding: 6px 14px;
             border-radius: 20px; font-size: 12px; font-weight: 600; z-index: 100;
             opacity: 0; pointer-events: none; transition: opacity 0.25s ease;
         }
@@ -63,7 +66,7 @@
 
         /* Brightness Slider (Horizontal - Bottom) */
         .brightness-container {
-            position: absolute; bottom: 70px; left: 50%; transform: translateX(-50%);
+            position: absolute; bottom: 72px; left: 50%; transform: translateX(-50%);
             background: rgba(255, 255, 255, 0.9); padding: 6px 14px; border-radius: 20px;
             display: flex; align-items: center; gap: 8px; z-index: 25; width: 190px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.2); color: #ff7700; font-weight: bold;
@@ -141,6 +144,10 @@
             object-fit: cover; display: none; border-radius: 50%;
         }
 
+        /* Center Shutter + Pause/Resume Group */
+        .shutter-cluster {
+            display: flex; align-items: center; gap: 12px;
+        }
         .capture-btn {
             width: 66px; height: 66px; border-radius: 50%; background: linear-gradient(135deg, #ff9900, #ff5500);
             border: 3px solid #fff; cursor: pointer; box-shadow: 0 4px 12px rgba(255, 119, 0, 0.4);
@@ -151,9 +158,18 @@
             box-shadow: 0 4px 14px rgba(255, 59, 48, 0.6);
         }
         .capture-btn-inner { width: 50px; height: 50px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.8); transition: all 0.2s ease; }
-        .capture-btn.recording .capture-btn-inner { width: 24px; height: 24px; border-radius: 4px; background: #fff; border: none; }
+        .capture-btn.recording .capture-btn-inner { width: 22px; height: 22px; border-radius: 4px; background: #fff; border: none; }
 
-        /* AdSense Banner Container */
+        #btn-pause-resume {
+            display: none; width: 44px; height: 44px; border-radius: 50%;
+            background: #222; border: 2px solid #ff7700; color: #fff;
+            justify-content: center; align-items: center; cursor: pointer;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.25);
+        }
+        #btn-pause-resume.visible { display: flex; }
+        #btn-pause-resume svg { width: 20px; height: 20px; fill: #ff7700; stroke: none; }
+
+        /* Ad Banner Container (For Google AdMob in Play Store TWA) */
         #adsense-container {
             height: 50px; background-color: #f1f1f1; display: flex;
             justify-content: center; align-items: center; font-size: 11px; color: #888;
@@ -288,7 +304,7 @@
                 <span>-</span>
             </div>
 
-            <!-- Horizontal Brightness Slider (40% to 180% so screen never goes black) -->
+            <!-- Horizontal Brightness Slider -->
             <div class="brightness-container" onclick="event.stopPropagation()">
                 <span>☀️</span>
                 <input type="range" id="brightness-range" min="40" max="180" value="100" oninput="adjustBrightness(this.value)">
@@ -301,8 +317,8 @@
 
             <div class="feature-item">
                 <div class="feature-header">
-                    <span>Auto Download to Phone</span>
-                    <label class="toggle-switch"><input type="checkbox" id="toggle-autosave"><span class="slider"></span></label>
+                    <span>Auto Save to Phone Storage</span>
+                    <label class="toggle-switch"><input type="checkbox" id="toggle-autosave" checked><span class="slider"></span></label>
                 </div>
             </div>
 
@@ -499,8 +515,17 @@
                 <svg viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
             </button>
 
-            <div class="capture-btn" id="capture-button" onclick="captureMedia()">
-                <div class="capture-btn-inner"></div>
+            <!-- Center Shutter & Pause/Resume Cluster -->
+            <div class="shutter-cluster">
+                <div class="capture-btn" id="capture-button" onclick="captureMedia()">
+                    <div class="capture-btn-inner"></div>
+                </div>
+                <button id="btn-pause-resume" onclick="togglePauseResumeRecording()" title="Pause / Resume">
+                    <svg id="pause-resume-icon" viewBox="0 0 24 24">
+                        <rect x="6" y="4" width="4" height="16" rx="1"/>
+                        <rect x="14" y="4" width="4" height="16" rx="1"/>
+                    </svg>
+                </button>
             </div>
 
             <button class="bottom-icon-btn" onclick="openPreviewGallery()" title="Gallery">
@@ -514,7 +539,7 @@
         </div>
 
         <div id="adsense-container">
-            <span>Google AdSense Banner Space</span>
+            <span>Ad Banner Space (Connect Google AdMob in Play Console)</span>
         </div>
 
     </div>
@@ -522,6 +547,7 @@
     <script>
         const videoElement = document.getElementById('webcam-video');
         const aspectWrapper = document.getElementById('aspect-ratio-wrapper');
+        const hudOverlay = document.getElementById('live-hud-overlay');
         const hudDatetime = document.getElementById('hud-datetime');
         const hudLocation = document.getElementById('hud-location');
         const hudCustomTags = document.getElementById('hud-custom-tags');
@@ -531,6 +557,7 @@
         let mediaStream = null;
         let videoTrack = null;
         let isVideoRecording = false;
+        let isRecordingPaused = false;
         let mediaRecorder = null;
         let recordedChunks = [];
         let flashState = false;
@@ -543,11 +570,29 @@
         let currentEditIndex = -1;
         let editImageObj = new Image();
 
-        let videoAnimFrame = null;
         let isGalleryGridView = false;
         let db = null;
 
-        // Initialize IndexedDB so photos & videos persist silently without Chrome download banners
+        // Detect Vertical (Portrait) vs Horizontal (Landscape) orientation
+        function isPortraitOrientation() {
+            if (window.screen && window.screen.orientation && window.screen.orientation.type) {
+                return window.screen.orientation.type.startsWith('portrait');
+            }
+            return window.innerHeight >= window.innerWidth;
+        }
+
+        function syncOrientationHUD() {
+            if (isPortraitOrientation()) {
+                hudOverlay.classList.remove('landscape-hud');
+            } else {
+                hudOverlay.classList.add('landscape-hud');
+            }
+        }
+        window.addEventListener('resize', syncOrientationHUD);
+        window.addEventListener('orientationchange', syncOrientationHUD);
+        syncOrientationHUD();
+
+        // IndexedDB for persistent in-app gallery
         function initDB() {
             const request = indexedDB.open("GeoSnapMediaDB", 1);
             request.onupgradeneeded = (e) => {
@@ -701,7 +746,7 @@
                         facingMode: { ideal: currentFacingMode },
                         width: { ideal: 1920 },
                         height: { ideal: 1080 },
-                        frameRate: { ideal: 30 }
+                        frameRate: { ideal: 30, max: 30 }
                     },
                     audio: true
                 });
@@ -784,13 +829,44 @@
             isVideoRecording = !isVideoRecording;
             const btn = document.getElementById('btn-video-toggle');
             const capBtn = document.getElementById('capture-button');
+            const pauseBtn = document.getElementById('btn-pause-resume');
+
             btn.classList.toggle('active', isVideoRecording);
             capBtn.classList.toggle('recording', isVideoRecording);
             
             if (isVideoRecording) {
+                pauseBtn.classList.add('visible');
+                setPauseIcon(false);
                 startRecording();
             } else {
+                pauseBtn.classList.remove('visible');
                 stopRecording();
+            }
+        }
+
+        function setPauseIcon(isPaused) {
+            const svg = document.getElementById('pause-resume-icon');
+            if (isPaused) {
+                // Play triangle icon to resume
+                svg.innerHTML = '<polygon points="6,4 20,12 6,20"/>';
+            } else {
+                // Double bar pause icon
+                svg.innerHTML = '<rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/>';
+            }
+        }
+
+        function togglePauseResumeRecording() {
+            if (!mediaRecorder || !isVideoRecording) return;
+            if (mediaRecorder.state === 'recording') {
+                mediaRecorder.pause();
+                isRecordingPaused = true;
+                setPauseIcon(true);
+                showToast("Recording Paused");
+            } else if (mediaRecorder.state === 'paused') {
+                mediaRecorder.resume();
+                isRecordingPaused = false;
+                setPauseIcon(false);
+                showToast("Recording Resumed");
             }
         }
 
@@ -834,43 +910,66 @@
             return lines;
         }
 
+        // Draw orientation-matched timestamp onto any photo or video canvas
+        function drawOrientationWatermark(ctx, width, height) {
+            const lines = getWatermarkLines();
+            if (lines.length === 0) return;
+
+            const isPortrait = height >= width;
+            // Scale font proportionally to the shorter edge so vertical & horizontal look balanced
+            const baseDimension = isPortrait ? width : height;
+            const fontSize = Math.max(18, Math.round(baseDimension * 0.032));
+            const lineHeight = Math.round(fontSize * 1.35);
+            const marginX = Math.round(width * 0.035);
+            const marginBottom = Math.round(height * 0.035);
+
+            ctx.save();
+            ctx.shadowColor = "rgba(0, 0, 0, 0.92)";
+            ctx.shadowBlur = 5;
+            ctx.shadowOffsetX = 2;
+            ctx.shadowOffsetY = 2;
+            ctx.fillStyle = '#ffffff';
+            ctx.font = `bold ${fontSize}px sans-serif`;
+
+            let startY = height - (lines.length * lineHeight) - marginBottom + fontSize;
+            lines.forEach((line, index) => {
+                ctx.fillText(line, marginX, startY + (index * lineHeight));
+            });
+            ctx.restore();
+        }
+
         function startRecording() {
             recordedChunks = [];
             recordingSeconds = 0;
+            isRecordingPaused = false;
 
             try {
                 const canvas = document.getElementById('video-canvas');
-                const vw = videoElement.videoWidth || 1280;
-                const vh = videoElement.videoHeight || 720;
-                canvas.width = vw;
-                canvas.height = vh;
-                const ctx = canvas.getContext('2d', { alpha: false });
+                const rawW = videoElement.videoWidth || 1280;
+                const rawH = videoElement.videoHeight || 720;
 
-                function drawVideoFrame() {
+                // Cap recording resolution to fast 720p HD while preserving exact vertical/horizontal orientation
+                const maxEdge = 1280;
+                const scale = Math.min(1, maxEdge / Math.max(rawW, rawH));
+                canvas.width = Math.round(rawW * scale);
+                canvas.height = Math.round(rawH * scale);
+
+                const ctx = canvas.getContext('2d', { alpha: false, desynchronized: true });
+
+                // Sync drawing directly to hardware video frames for smooth, zero-lag video
+                function renderVideoFrame() {
                     if (!isVideoRecording) return;
-                    ctx.filter = `brightness(${currentBrightness}%)`;
-                    ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
-                    ctx.filter = 'none';
-
-                    const lines = getWatermarkLines();
-                    if (lines.length > 0) {
-                        const fontSize = Math.max(20, Math.round(canvas.width * 0.022));
-                        const lineHeight = Math.round(fontSize * 1.35);
-                        ctx.shadowColor = "rgba(0, 0, 0, 0.9)";
-                        ctx.shadowBlur = 6;
-                        ctx.shadowOffsetX = 2;
-                        ctx.shadowOffsetY = 2;
-                        ctx.fillStyle = '#ffffff';
-                        ctx.font = `bold ${fontSize}px sans-serif`;
-
-                        let startY = canvas.height - (lines.length * lineHeight) - 30;
-                        lines.forEach((line, index) => {
-                            ctx.fillText(line, 35, startY + (index * lineHeight));
-                        });
+                    if (!isRecordingPaused) {
+                        ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+                        drawOrientationWatermark(ctx, canvas.width, canvas.height);
                     }
-                    videoAnimFrame = requestAnimationFrame(drawVideoFrame);
+                    if ('requestVideoFrameCallback' in videoElement) {
+                        videoElement.requestVideoFrameCallback(renderVideoFrame);
+                    } else {
+                        requestAnimationFrame(renderVideoFrame);
+                    }
                 }
-                drawVideoFrame();
+                renderVideoFrame();
 
                 const canvasStream = canvas.captureStream(30);
                 const audioTracks = mediaStream ? mediaStream.getAudioTracks() : [];
@@ -878,10 +977,9 @@
                     canvasStream.addTrack(audioTracks[0]);
                 }
 
-                // Select best supported hardware codec on Android Chrome
+                // VP8 is hardware-accelerated on almost all Android devices (prevents CPU slow-down)
                 const supportedTypes = [
                     'video/webm;codecs=vp8,opus',
-                    'video/webm;codecs=vp9,opus',
                     'video/webm',
                     'video/mp4'
                 ];
@@ -894,8 +992,8 @@
                 }
 
                 const recorderOptions = selectedMime
-                    ? { mimeType: selectedMime, videoBitsPerSecond: 8000000 }
-                    : { videoBitsPerSecond: 8000000 };
+                    ? { mimeType: selectedMime, videoBitsPerSecond: 4500000 }
+                    : { videoBitsPerSecond: 4500000 };
 
                 mediaRecorder = new MediaRecorder(canvasStream, recorderOptions);
                 mediaRecorder.ondataavailable = event => {
@@ -915,7 +1013,7 @@
                     const mediaObj = { name: fileName, data: url, isVideo: true, blob: blob, mimeType: mime };
                     capturedMediaArray.unshift(mediaObj);
                     saveMediaToDB(mediaObj);
-                    showToast("HD Video saved to Gallery");
+                    showToast("Video saved to Gallery");
 
                     if (document.getElementById('toggle-autosave').checked) {
                         triggerDeviceDownload(url, fileName);
@@ -923,9 +1021,15 @@
                 };
 
                 mediaRecorder.start(500);
-                showToast("Recording HD Video...");
+                showToast("Recording Video...");
 
                 recordingTimerInterval = setInterval(() => {
+                    if (isRecordingPaused) {
+                        const mins = String(Math.floor(recordingSeconds / 60)).padStart(2, '0');
+                        const secs = String(recordingSeconds % 60).padStart(2, '0');
+                        hudDatetime.innerText = `⏸️ PAUSED [${mins}:${secs}]`;
+                        return;
+                    }
                     recordingSeconds++;
                     const mins = String(Math.floor(recordingSeconds / 60)).padStart(2, '0');
                     const secs = String(recordingSeconds % 60).padStart(2, '0');
@@ -936,14 +1040,12 @@
                 isVideoRecording = false;
                 document.getElementById('btn-video-toggle').classList.remove('active');
                 document.getElementById('capture-button').classList.remove('recording');
+                document.getElementById('btn-pause-resume').classList.remove('visible');
             }
         }
 
         function stopRecording() {
-            if (videoAnimFrame) {
-                cancelAnimationFrame(videoAnimFrame);
-                videoAnimFrame = null;
-            }
+            isRecordingPaused = false;
             if (mediaRecorder && mediaRecorder.state !== 'inactive') {
                 mediaRecorder.stop();
             }
@@ -970,33 +1072,48 @@
             }
 
             const canvas = document.getElementById('watermark-canvas');
-            canvas.width = videoElement.videoWidth || 1920;
-            canvas.height = videoElement.videoHeight || 1080;
-            const ctx = canvas.getContext('2d');
+            const vw = videoElement.videoWidth || 1920;
+            const vh = videoElement.videoHeight || 1080;
 
-            ctx.filter = `brightness(${currentBrightness}%)`;
-            ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
-            ctx.filter = 'none';
+            // Ensure captured photo matches screen orientation (Vertical vs Horizontal)
+            const deviceIsPortrait = isPortraitOrientation();
+            const streamIsPortrait = vh >= vw;
+
+            if (deviceIsPortrait !== streamIsPortrait) {
+                // Crop center to match active vertical/horizontal view
+                if (deviceIsPortrait) {
+                    const targetW = Math.round(vh * (9 / 16));
+                    const sx = Math.max(0, Math.round((vw - targetW) / 2));
+                    canvas.width = targetW;
+                    canvas.height = vh;
+                    const ctx = canvas.getContext('2d');
+                    ctx.filter = `brightness(${currentBrightness}%)`;
+                    ctx.drawImage(videoElement, sx, 0, targetW, vh, 0, 0, targetW, vh);
+                    ctx.filter = 'none';
+                    drawOrientationWatermark(ctx, canvas.width, canvas.height);
+                } else {
+                    const targetH = Math.round(vw * (9 / 16));
+                    const sy = Math.max(0, Math.round((vh - targetH) / 2));
+                    canvas.width = vw;
+                    canvas.height = targetH;
+                    const ctx = canvas.getContext('2d');
+                    ctx.filter = `brightness(${currentBrightness}%)`;
+                    ctx.drawImage(videoElement, 0, sy, vw, targetH, 0, 0, vw, targetH);
+                    ctx.filter = 'none';
+                    drawOrientationWatermark(ctx, canvas.width, canvas.height);
+                }
+            } else {
+                canvas.width = vw;
+                canvas.height = vh;
+                const ctx = canvas.getContext('2d');
+                ctx.filter = `brightness(${currentBrightness}%)`;
+                ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+                ctx.filter = 'none';
+                drawOrientationWatermark(ctx, canvas.width, canvas.height);
+            }
 
             const now = new Date();
             const fileName = `GeoSnap_${now.toISOString().replace(/[:.]/g, '-')}.jpg`;
-            const lines = getWatermarkLines();
-
-            if (lines.length > 0) {
-                const fontSize = Math.max(24, Math.round(canvas.width * 0.022));
-                const lineHeight = Math.round(fontSize * 1.35);
-                ctx.shadowColor = "rgba(0, 0, 0, 0.9)";
-                ctx.shadowBlur = 6;
-                ctx.shadowOffsetX = 2;
-                ctx.shadowOffsetY = 2;
-                ctx.fillStyle = '#ffffff';
-                ctx.font = `bold ${fontSize}px sans-serif`;
-
-                let startY = canvas.height - (lines.length * lineHeight) - 35;
-                lines.forEach((line, index) => {
-                    ctx.fillText(line, 40, startY + (index * lineHeight));
-                });
-            }
 
             canvas.toBlob((blob) => {
                 const url = URL.createObjectURL(blob);
